@@ -1,0 +1,31 @@
+Classification accuracy scores obtained on 10 iterations of 4-fold Cross-Validation.
+
+BER = Balanced Error Rate
+OA  = Overall Accuracy
+Kappa = Cohen's kappa (also called Heidke Skill Score)
+
+2DS, 5 classes (Agg,Col,Gra,Ros,Sph)
+
+*****************************
+Mean Testing BER    : 8.43% pm 3.27%
+Mean Training BER   : 2.32% pm 0.73%
+
+Mean Testing OA     : 91.19% pm 3.09%
+Mean Training OA    : 97.67% pm 0.75%
+
+Mean Testing Kappa  : 88.85% pm 3.92%
+Mean Training Kappa : 97.08% pm 0.94%
+*****************************
+
+HVPS, 5 classes (Agg,Col,Gra,Ros,Sph)
+
+*****************************
+Mean Testing BER    : 1.75% pm 1.36%
+Mean Training BER   : 0.30% pm 0.20%
+
+Mean Testing OA     : 98.01% pm 1.53%
+Mean Training OA    : 99.66% pm 0.22%
+
+Mean Testing Kappa  : 97.47% pm 1.95%
+Mean Training Kappa : 99.58% pm 0.28%
+*****************************
