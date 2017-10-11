@@ -120,37 +120,37 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
             % Hull
             X(i,j) = get_struct_field(roi.hull,'solidity'); Xlab{j} = 'solidity'; j=j+1; %34
             X(i,j) = get_struct_field(roi.hull,'convexity'); Xlab{j} = 'convexity'; j=j+1; %35
-            X(i,j) = length(get_struct_field(roi.hull,'xh')); Xlab{j} = 'Hull nb angles'; j=j+1; %36
+            X(i,j) = length(get_struct_field(roi.hull,'xh')); Xlab{j} = 'Hull nb angles'; j=j+1; %61
             
             
             % Others
             %X(i,j) = max(1,roi.complex); Xlab{j} = 'complexity'; j=j+1; %62
-            X(i,j) = roi.roundness; Xlab{j} = 'roundness'; j=j+1; %37
-            X(i,j) = roi.compactness; Xlab{j} = 'compactness'; j=j+1; %38
+            X(i,j) = roi.roundness; Xlab{j} = 'roundness'; j=j+1; %63
+            X(i,j) = roi.compactness; Xlab{j} = 'compactness'; j=j+1; %64
             if roi.E.a >= roi.E.b
-                X(i,j) = roi.E.b/roi.E.a; Xlab{j} = 'aspec ratio'; j=j+1; %39
-                X(i,j) = sqrt(1-roi.E.b/roi.E.a); Xlab{j} = 'eccentricity'; j=j+1; %40
+                X(i,j) = roi.E.b/roi.E.a; Xlab{j} = 'aspec ratio'; j=j+1; %65
+                X(i,j) = sqrt(1-roi.E.b/roi.E.a); Xlab{j} = 'eccentricity'; j=j+1; %66
             else
-                X(i,j) = 1; Xlab{j} = 'aspect ratio'; j=j+1; %39
-                X(i,j) = 0; Xlab{j} = 'eccentricity'; j=j+1; %40
+                X(i,j) = 1; Xlab{j} = 'aspect ratio'; j=j+1; %65
+                X(i,j) = 0; Xlab{j} = 'eccentricity'; j=j+1; %66
             end
             %X(i,j) = roi.xhi; Xlab{j} = 'xi'; j=j+1; %67
             
             if roi.nb_holes > 0
-               X(i,j) = 1; Xlab{j} = 'has holes'; j=j+1; %41
+               X(i,j) = 1; Xlab{j} = 'has holes'; j=j+1; %68
             else
-               X(i,j) = 0; Xlab{j} = 'has holes'; j=j+1; %41
+               X(i,j) = 0; Xlab{j} = 'has holes'; j=j+1; %68
             end
-            X(i,j) = roi.nb_holes; Xlab{j} = 'N holes'; j=j+1; %42
+            X(i,j) = roi.nb_holes; Xlab{j} = 'N holes'; j=j+1; %69
             
             % New descriptors based on min rectangle box
-            X(i,j) = get_struct_field(roi.Rect,'A_ratio'); Xlab{j} = 'rectangularity'; j=j+1; %43
-            X(i,j) = get_struct_field(roi.Rect,'p_ratio'); Xlab{j} = 'rect perim ratio'; j=j+1; %44
-            X(i,j) = get_struct_field(roi.Rect,'aspect_ratio'); Xlab{j} = 'rect aspect ratio'; j=j+1; %45
-            X(i,j) = get_struct_field(roi.Rect,'eccentricity'); Xlab{j} = 'rect eccentricity'; j=j+1; %46
+            X(i,j) = get_struct_field(roi.Rect,'A_ratio'); Xlab{j} = 'rectangularity'; j=j+1; %70
+            X(i,j) = get_struct_field(roi.Rect,'p_ratio'); Xlab{j} = 'rect perim ratio'; j=j+1; %71
+            X(i,j) = get_struct_field(roi.Rect,'aspect_ratio'); Xlab{j} = 'rect aspect ratio'; j=j+1; %72
+            X(i,j) = get_struct_field(roi.Rect,'eccentricity'); Xlab{j} = 'rect eccentricity'; j=j+1; %73
             
             % New descriptor based on circumscribed circle
-            X(i,j) = (2*pi*get_struct_field(roi.C_out,'r'))/roi.perim; Xlab{j} = 'circle out perim ratio'; j=j+1; %47
+            X(i,j) = (2*pi*get_struct_field(roi.C_out,'r'))/roi.perim; Xlab{j} = 'circle out perim ratio'; j=j+1; %74
             
             
 %             if ~isempty(roi.fallspeed)
@@ -165,34 +165,34 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
 %             X(i,j) = max(1,roi.complex) * (1 + roi.range_intens); Xlab{j} = 'chi Garrett wrong'; j=j+1; %77
 %             X(i,j) = max(1,roi.complex) * (1 + roi.local_std7); Xlab{j} = 'chi Garrett true'; j=j+1; %78
 %             X(i,j) = roi.local_std; Xlab{j} = 'std_intens'; j=j+1; %79
-            X(i,j) = roi.complex; Xlab{j} = 'complex'; j=j+1; %48
+            X(i,j) = roi.complex; Xlab{j} = 'complex'; j=j+1; %80
 
             % New descriptors which are probably useless
             tmp_vec = [];
-            X(i,j) = get_struct_field(roi.Sym,'P0'); Xlab{j} = 'fft P0'; j=j+1; %49
-            X(i,j) = get_struct_field(roi.Sym,'P1'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P1'; j=j+1; %50
-            X(i,j) = get_struct_field(roi.Sym,'P2'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P2'; j=j+1; %51
-            X(i,j) = get_struct_field(roi.Sym,'P3'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P3'; j=j+1; %52
-            X(i,j) = get_struct_field(roi.Sym,'P4'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P4'; j=j+1; %53
-            X(i,j) = get_struct_field(roi.Sym,'P5'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P5'; j=j+1; %54
-            X(i,j) = get_struct_field(roi.Sym,'P6'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P6'; j=j+1; %55
-            X(i,j) = get_struct_field(roi.Sym,'P7'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P7'; j=j+1; %56
-            X(i,j) = get_struct_field(roi.Sym,'P8'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P8'; j=j+1; %57
-            X(i,j) = get_struct_field(roi.Sym,'P9'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P9'; j=j+1; %58
-            X(i,j) = get_struct_field(roi.Sym,'P10'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P10'; j=j+1; %59
-            X(i,j) = get_struct_field(roi.Sym,'mean'); Xlab{j} = 'Sym mean'; j=j+1; %60
-            X(i,j) = get_struct_field(roi.Sym,'std'); Xlab{j} = 'Sym std'; j=j+1; %61
-            X(i,j) = get_struct_field(roi.Sym,'std')/get_struct_field(roi.Sym,'mean'); Xlab{j} = 'Sym std/mean'; j=j+1; %962
-            X(i,j) = get_struct_field(roi.Sym,'P6')/nanmax(tmp_vec); Xlab{j} = 'fft P6/Pmax'; j=j+1; %63
+            X(i,j) = get_struct_field(roi.Sym,'P0'); Xlab{j} = 'fft P0'; j=j+1; %81
+            X(i,j) = get_struct_field(roi.Sym,'P1'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P1'; j=j+1; %82
+            X(i,j) = get_struct_field(roi.Sym,'P2'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P2'; j=j+1; %83
+            X(i,j) = get_struct_field(roi.Sym,'P3'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P3'; j=j+1; %84
+            X(i,j) = get_struct_field(roi.Sym,'P4'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P4'; j=j+1; %85
+            X(i,j) = get_struct_field(roi.Sym,'P5'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P5'; j=j+1; %86
+            X(i,j) = get_struct_field(roi.Sym,'P6'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P6'; j=j+1; %87
+            X(i,j) = get_struct_field(roi.Sym,'P7'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P7'; j=j+1; %88
+            X(i,j) = get_struct_field(roi.Sym,'P8'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P8'; j=j+1; %89
+            X(i,j) = get_struct_field(roi.Sym,'P9'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P9'; j=j+1; %90
+            X(i,j) = get_struct_field(roi.Sym,'P10'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P10'; j=j+1; %91
+            X(i,j) = get_struct_field(roi.Sym,'mean'); Xlab{j} = 'Sym mean'; j=j+1; %92
+            X(i,j) = get_struct_field(roi.Sym,'std'); Xlab{j} = 'Sym std'; j=j+1; %93
+            X(i,j) = get_struct_field(roi.Sym,'std')/get_struct_field(roi.Sym,'mean'); Xlab{j} = 'Sym std/mean'; j=j+1; %94
+            X(i,j) = get_struct_field(roi.Sym,'P6')/nanmax(tmp_vec); Xlab{j} = 'fft P6/Pmax'; j=j+1; %95
             [~,idx_max] = nanmax(tmp_vec); 
-            X(i,j) = idx_max-1; Xlab{j} = 'fft P# max'; j=j+1; %64 <--- check why is there idx_max-1 here, why -1 ?
+            X(i,j) = idx_max-1; Xlab{j} = 'fft P# max'; j=j+1; %96 <--- check why is there idx_max-1 here, why -1 ?
             
             % new descriptor based on truncated ellipse fitted (useful to detect truncated Spheres)
-            X(i,j) = get_struct_field(roi.E2,'fit_OA'); Xlab{j} = 'truncated ellipse fitted OA'; j=j+1; %65
-            X(i,j) = roi.touch_edge; Xlab{j} = 'is touching image edge'; j=j+1; %66
-            X(i,j) = roi.touch_edge_ratio; Xlab{j} = 'ratio of perimeter touching the edge'; j=j+1; %67
-            X(i,j) = roi.n_true; Xlab{j} = 'total number of 1 pixels'; j=j+1; %68
-            X(i,j) = roi.ntrue_ratio; Xlab{j} = 'ratio 1 pixels within mask / total 1 pixels'; j=j+1; % 69
+            X(i,j) = get_struct_field(roi.E2,'fit_OA'); Xlab{j} = 'truncated ellipse fitted OA'; j=j+1; 
+            X(i,j) = roi.touch_edge; Xlab{j} = 'is touching image edge'; j=j+1;
+            X(i,j) = roi.touch_edge_ratio; Xlab{j} = 'ratio of perimeter touching the edge'; j=j+1;
+            X(i,j) = roi.n_true; Xlab{j} = 'total number of 1 pixels'; j=j+1;
+            X(i,j) = roi.ntrue_ratio; Xlab{j} = 'ratio 1 pixels within mask / total 1 pixels'; j=j+1;
             
             % new descriptors based on IC-PCA
             X(i,j) = get_struct_field(roi.icpca.b,'a_skaalattu_poly'); Xlab{j} = 'a_skaalattu_poly'; j=j+1; %70

@@ -4,7 +4,7 @@ clear; close all;
 classif_subject = 'geometry';
 
 % load data
-dir_data = '/home/praz/Documents/airlab/training_set/2DS_smooth';
+dir_data = '/home/praz/Documents/Cloud_Probes/training_set/2DS_smooth';
 data_filenames = dir(fullfile(dir_data,'20*.mat'));
 data_filenames = {data_filenames.name}';
 data_picnames = dir(fullfile(dir_data,'*.png'));
@@ -16,14 +16,13 @@ t_str_stop  = '20170101000000';
 
 % user params
 CV_k = 4;
-CV_it = 5;
-random = true;
+CV_it = 1;
+random = false;
 verbose = false;
-illustration = false;
+illustratio = false;
 use_weights = false;
 apply_feat_transfo = false;
 feat_vec = [1:1:97]';
-dim_stop = 2;
 
 % load the training matrix X
 [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
@@ -34,11 +33,6 @@ disp(dim_ini);
 
 % Load the labels vector y
 y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
-
-% remove NaN-values in X,y
-idx = find(isnan(sum(X,2)));
-X(idx,:) = [];
-y(idx) = [];
 
 labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
 %parameters_method = {0.0001,0.01,10000,0,5000}; %{0.001,1,10000,0,10000};
@@ -111,6 +105,7 @@ if 1
     feat_vec_pool = feat_vec;
     feat_vec_ini = feat_vec;
     feat_vec_current = [];
+    dim_stop =20;
     feat_mat = zeros(dim_stop,1);
     
     while k<dim_stop
@@ -198,14 +193,7 @@ if 1
         
         for j=1:numel(feat_vec_current)
             if j==1
-                fprintf('%u ',feat_vec_current(j));
-            else
-                fprintf('> %u ',feat_vec_current(j));
-            end
-            if j==numel(feat_vec_current)
-                fprintf('\n');
-            end
-        end
+                fprintf('%u '
             
         
     end
