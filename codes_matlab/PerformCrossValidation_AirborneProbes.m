@@ -14,7 +14,7 @@ random_CV = false;
 
 % Path to training data
 if strcmp(target,'2DS') || strcmp(target,'svm')
-    dir_data = '../training_set/2DS_smooth';
+    dir_data = '../training_set/2DS';
 elseif strcmp(target,'HVPS')
     dir_data = '../training_set/HVPS';
 end
@@ -28,20 +28,20 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('features_opt_4fold_10it_alpha0.0001_lambda0.01_2DS_3500samples.mat');
-n_desc = 17;
+load('feat_opt/features_opt_4fold_10it_rnd_SVM_100_0.01_3500samples_97feats.mat');
+n_desc = 20;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
 feat_vec = [feat_vec];
 % add ratio touching the boarder ?
-icpca_feats = [70:79]';
+icpca_feats = []';
 feat_vec = [feat_vec; icpca_feats];
 %feat_vec(end+1) = 68;
 %feat_vec(end+1) = 69;
 
 % hyperparameters for ML method
 if strcmp(target,'2DS')
-    parameters_method =  {0.0001,0.01,10000,0,10000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
+    parameters_method =  {0.0001,0.01,5000,0.75,10000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
 elseif strcmp(target,'HVPS')
     parameters_method = {0.001,1,10000,0,10000};
 elseif strcmp(target,'riming')

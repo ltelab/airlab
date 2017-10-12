@@ -15,21 +15,29 @@ clear all;
 tic;
 
 % Load IO paths
-label.campaigndir = '/home/praz/Documents/Cloud_Probes/SampleImage/2DS/merged_all';
-label.outputdir_mat = '/home/praz/Documents/Cloud_Probes/training_set/2DS_smooth';
-label.outputdir_img = '/home/praz/Documents/Cloud_Probes/training_set/2DS_smooth';
+label.campaigndir = '/home/praz/Documents/airlab/SampleImage/CPI/merged';
+label.outputdir_mat = '/home/praz/Documents/airlab/training_set/CPI';
+label.outputdir_img = '/home/praz/Documents/airlab/training_set/CPI';
 % ...
 
 % Image processing parameters
+process.probe = 'CPI';
+
 process.min_hole_area = 1;
 process.min_area_for_convex_hull = 15;
 process.min_area_for_truncated_ellipse_fit = 40;
-process.save_results = 1;
-process.probe = '2DS';
 process.use_icpca = 1;
 process.icpca_default = 0;
-process.smoothen_perim = 1;
-% ...
+process.save_results = 1;
+process.illustration = 0;
+
+% for 2DS (mostly)
+process.smoothen_perim = 0;
+% for CPI (mostly)
+process.rm_white_boarders = true;
+process.white_thresh = 0.95;
+process.graythresh_multiplier = 1.3;
+
 
 % Upload particle images present in campaigndir
 img_list = dir(fullfile(label.campaigndir,'*.png'));
@@ -47,11 +55,68 @@ for i=1:length(img_list)
     % filename
     DS.name = img_list{i};
     DS.probe = process.probe;
-    % data (bw)
-    tmp_mat = imread(fullfile(label.campaigndir,img_list{i}));
-    DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
-    DS.data(tmp_mat(:,:,1)==0) = true;
-    DS.n_true = sum(DS.data(:)); % number of 1 pixels 
+    
+    % load data
+    if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
+        tmp_mat = imread(fullfile(label.campaigndir,img_list{i}));
+        DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
+        DS.data(tmp_mat(:,:,1)==0) = true;   
+    
+    % CPI probe requires a little bit more of processing as images are true colors and generally contain noise
+    elseif strcmp(process.probe,'CPI')
+        info = imfinfo(fullfile(label.campaigndir,img_list{i}));
+
+        switch info.ColorType
+            case 'grayscale'
+                tmp_mat = imread(fullfile(label.campaigndir,img_list{i}));
+            case 'truecolor'
+                tmp_mat = rgb2gray(im2double(imread(fullfile(label.campaigndir,img_list{i}))));
+            case 'indexed'
+                [X, map] = imread(fullfile(label.campaigndir,img_list{i}));
+                tmp_mat = im2double(ind2gray(X, map));
+            otherwise
+                error('invalid image type')
+        end
+        %tmp_mat = rgb2gray(im2double(imread(fullfile(label.campaigndir,img_list{i}))));
+        tmp_mat_ini = tmp_mat;
+    
+        % detect and remove the "white boarders around the image"
+        if process.rm_white_boarders
+            med_col = median(tmp_mat,1);
+            med_line = median(tmp_mat,2);
+            idx_valid_col = find(med_col < process.white_thresh);
+            idx_valid_line = find(med_line < process.white_thresh);
+            tmp_mat = tmp_mat(idx_valid_line,idx_valid_col);
+            
+        end
+    
+        %figure; imshow(tmp_mat);
+
+        % optional smoothing (bad)
+        %tmp_mat = conv2(tmp_mat,double(ones(3)/9),'full'); % by default : 'valid' 
+        % figure; imshow(tmp_mat);
+    
+        % tricky part : binarize the image
+        bw_mask_ini = [];
+        bw_mask_ini{1} = imfill(~imbinarize(tmp_mat,graythresh(tmp_mat)),'holes'); % alternative 1 
+        bw_mask_ini{2} = imfill(~imbinarize(tmp_mat,process.graythresh_multiplier*graythresh(tmp_mat)),'holes'); % alternative 2
+        %select best alternative based on particle shape complexity
+        score_alt_1 = sum(sum(bwperim(bw_mask_ini{1})))/(2*sqrt(pi*bwarea(bw_mask_ini{1})));
+        score_alt_2 = sum(sum(bwperim(bw_mask_ini{2})))/(2*sqrt(pi*bwarea(bw_mask_ini{2})));
+        [~,idx_alt] = min([score_alt_1 score_alt_2]);
+        bw_mask_ini = bw_mask_ini{idx_alt};
+        %bw_mask_ini = ~bw_mask_ini;
+        %figure; imshow(bw_mask_ini);
+        bw_mask_fat = edge_detection(bw_mask_ini,10,0);
+        bw_mask_ini_filled = imfill(bw_mask_ini,'holes');
+        bw_holes_mask = logical(bw_mask_ini_filled - bw_mask_ini);
+        bw_mask = bw_mask_fat;
+        bw_mask(bw_holes_mask) = 0;
+        %figure; imshow(bw_mask); 
+        % at that point bw_mask should look like standard 2DS image
+        DS.data = bw_mask;
+        
+    end
 
     % roi detection (normally there is just one main area, maybe 1-2 leftover pixels)
     all_roi = regionprops(DS.data,'Image','BoundingBox','SubarrayIdx', ...
@@ -134,7 +199,8 @@ for i=1:length(img_list)
     crop_y = ceil(all_roi(idx_selected).BoundingBox(1));
     crop_width = floor(all_roi(idx_selected).BoundingBox(3));
     crop_height = floor(all_roi(idx_selected).BoundingBox(4));
-    DS.data = DS.data(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));      
+    DS.data = DS.data(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));  
+    tmp_mat_cropped = tmp_mat(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1)); 
 
     % retrieve the BW mask of the selected particle (clean leftover pixels)
     % for binary images, the BW mask == data
@@ -158,6 +224,11 @@ for i=1:length(img_list)
     holes_area = [holes_roi.Area];
     idx = find(holes_area >= process.min_hole_area);
     DS.nb_holes = numel(idx);
+    
+    % Update grayscale image of the snowflake
+    DS.data_gs = tmp_mat_cropped;
+    DS.data_gs(~DS.bw_mask_filled) = 1; % 1 = white in grayscale
+    
     
     
     if process.smoothen_perim
@@ -185,6 +256,7 @@ for i=1:length(img_list)
     [DS.y DS.x] = find(DS.bw_mask_filled > 0);
     DS.area = sum(DS.bw_mask_filled(:));
     DS.area_porous = sum(DS.bw_mask(:));
+    DS.n_true = sum(DS.data(:)); % number of 1 pixels
     DS.ntrue_ratio = DS.area_porous/DS.n_true;
     DS.eq_radius = sqrt(DS.area/pi);
 
@@ -344,7 +416,15 @@ for i=1:length(img_list)
         end
         
     end
+    
+    if process.illustration
+        
+        figure;
+        subplot(221); imshow(tmp_mat_ini); xlabel('Raw image');
+        subplot(222); imshow(DS.data_gs); xlabel('Final image');
+        subplot(223); imshow(DS.data); xlabel('BW mask');
 
+    end
     
     % save results in a .mat structure and the cropped particle in a .png
     if process.save_results
@@ -359,10 +439,17 @@ for i=1:length(img_list)
         if ~exist(label.outputdir_img,'dir')
             mkdir(label.outputdir_img);
         end
-        img2save = DS.data;
-        img2save(DS.data) = false; % reverse colors
-        img2save(~DS.data) = true;
-        imwrite(img2save.*255,fullfile(label.outputdir_img,DS.name),'png','BitDepth', 8);
+        if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
+            img2save = DS.data;
+            img2save(DS.data) = false; % reverse colors
+            img2save(~DS.data) = true;
+            imwrite(img2save.*255,fullfile(label.outputdir_img,DS.name),'png','BitDepth', 8);
+            
+        elseif strcmp(process.probe,'CPI')
+            img2save = DS.data_gs;
+            imwrite(img2save,fullfile(label.outputdir_img,DS.name),'png','BitDepth', 8);
+            
+        end
 
     end
 

@@ -16,14 +16,14 @@ t_str_stop  = '20170101000000';
 
 % user params
 CV_k = 4;
-CV_it = 5;
+CV_it = 10;
 random = true;
 verbose = false;
 illustration = false;
 use_weights = false;
 apply_feat_transfo = false;
 feat_vec = [1:1:97]';
-dim_stop = 2;
+dim_stop = 20;
 
 % load the training matrix X
 [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
@@ -41,8 +41,8 @@ X(idx,:) = [];
 y(idx) = [];
 
 labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
-%parameters_method = {0.0001,0.01,10000,0,5000}; %{0.001,1,10000,0,10000};
-parameters_method = {100,0.01,'rbf'};
+parameters_method = {0.0001,0.01,10000,0,5000}; %{0.001,1,10000,0,10000};
+%parameters_method = {100,0.01,'rbf'};
 
 %% Features transformation
 
@@ -137,7 +137,7 @@ if 1
             % best params for riming, tol = 10 {0.0001,0.01,1000,0,10000};
             % best params for melting, tol = 0.1 {{0.001,1,1000,0,10000}
             %out = CrossValidation('logistic','multiclass',parameters_method,4,3,Xtest,y,0,0,0,1,0,feat_vec_test);
-            out = CrossValidation('svm','multiclass',parameters_method,CV_k,CV_it,Xtest,y,random,verbose,illustration,use_weights,apply_feat_transfo,feat_vec_test); % !!! no cost weight used!
+            out = CrossValidation('logistic','multiclass',parameters_method,CV_k,CV_it,Xtest,y,random,verbose,illustration,use_weights,apply_feat_transfo,feat_vec_test);
             kappa_test(i) = out.kappa_Te;
             kappa_train(i) = out.kappa_Tr;
             BER_test(i) = out.BER_Te;
