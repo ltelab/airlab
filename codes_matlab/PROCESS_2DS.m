@@ -15,9 +15,9 @@ clear all;
 tic;
 
 % Load IO paths
-label.campaigndir = '/home/praz/Documents/airlab/SampleImage/CPI/merged';
-label.outputdir_mat = '/home/praz/Documents/airlab/training_set/CPI';
-label.outputdir_img = '/home/praz/Documents/airlab/training_set/CPI';
+label.campaigndir = '/home/praz/Documents/CPI_data/tmp1';
+label.outputdir_mat = '/home/praz/Documents/CPI_data/tmp2';
+label.outputdir_img = '/home/praz/Documents/CPI_data/tmp2';
 % ...
 
 % Image processing parameters
@@ -34,7 +34,7 @@ process.illustration = 0;
 % for 2DS (mostly)
 process.smoothen_perim = 0;
 % for CPI (mostly)
-process.rm_white_boarders = true;
+process.rm_white_boarders = false;
 process.white_thresh = 0.95;
 process.graythresh_multiplier = 1.3;
 
@@ -58,7 +58,7 @@ for i=1:length(img_list)
     
     % load data
     if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
-        tmp_mat = imread(fullfile(label.campaigndir,img_list{i}));
+        tmp_mat = imread(fullfile(label.campaigndir,img_list{i})); % grayscale or truecolor
         DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
         DS.data(tmp_mat(:,:,1)==0) = true;   
     

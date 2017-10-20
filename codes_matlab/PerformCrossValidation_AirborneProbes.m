@@ -3,18 +3,19 @@ clear; close all;
 %% User parameters & initialisation
 % User parameters
 K=4; 
-N_it=1; 
-method='svm';
+N_it=10; 
+method='logistic';
 type_classif='multiclass'; 
-use_cost_weights = false;
-target = 'svm';
+use_cost_weights = true;
+target = '2DS';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
 random_CV = false;
+grid_search = false;
 
 % Path to training data
 if strcmp(target,'2DS') || strcmp(target,'svm')
-    dir_data = '../training_set/2DS';
+    dir_data = '../training_set/2DS_smooth';
 elseif strcmp(target,'HVPS')
     dir_data = '../training_set/HVPS';
 end
@@ -28,7 +29,7 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('feat_opt/features_opt_4fold_10it_rnd_SVM_100_0.01_3500samples_97feats.mat');
+load('feat_opt/features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat');
 n_desc = 20;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
@@ -41,7 +42,7 @@ feat_vec = [feat_vec; icpca_feats];
 
 % hyperparameters for ML method
 if strcmp(target,'2DS')
-    parameters_method =  {0.0001,0.01,5000,0.75,10000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
+    parameters_method =  {0.00014384,0.38,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda // after grid search with 20 features : {0.00016681,0.22,5000,0,5000} // fine tuning : {0.00014384,0.38,5000,0,5000}
 elseif strcmp(target,'HVPS')
     parameters_method = {0.001,1,10000,0,10000};
 elseif strcmp(target,'riming')
@@ -145,10 +146,94 @@ end
 end
 
 %% Classification 
-N = size(X,1);
-D = size(X,2);
-N_classes = length(unique(y));
-feat_vec_dummy = 1:1:size(X,2);
-Cout = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random_CV,1,1,use_cost_weights,dynamic_feat_transfo,feat_vec_dummy);
+if ~grid_search
+    
+    N = size(X,1);
+    D = size(X,2);
+    N_classes = length(unique(y));
+    feat_vec_dummy = 1:1:size(X,2);
+    Cout = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random_CV,1,1,use_cost_weights,dynamic_feat_transfo,feat_vec_dummy);
+    
+
+%% hyperparameters space grid search
+else
+
+    %{0.00016681,0.22,5000,0,5000}
+    
+    N = size(X,1);
+    D = size(X,2);
+    N_classes = length(unique(y));
+    feat_vec_dummy = 1:1:size(X,2);
+
+    step_vec = logspace(-5,-3,20);
+    lambda_vec = logspace(-2,1,20);
+    alpha_vec = [0];
+    it_vec = [5000];
+    
+    BER_Te = zeros(numel(step_vec),numel(lambda_vec));
+    BER_Tr = zeros(numel(step_vec),numel(lambda_vec));
+    kappa_Te = zeros(numel(step_vec),numel(lambda_vec));
+    kappa_Tr = zeros(numel(step_vec),numel(lambda_vec));
+    OA_Te = zeros(numel(step_vec),numel(lambda_vec));
+    OA_Tr = zeros(numel(step_vec),numel(lambda_vec));
+    
+    count = 0;
+    count_tot = numel(step_vec)*numel(lambda_vec)*numel(alpha_vec)*numel(it_vec);
+    
+    for i=1:numel(step_vec)
+        parfor j=1:numel(lambda_vec)
+            %for k=1:numel(it_vec)
+                %for l=1:numel(alpha_vec)
+                    
+                    %count = count + 1;
+                    %fprintf('%u / %u \n',count,count_tot);
+                    fprintf('%u/%u || %u/%u || %u/%u || %u/%u \n',i,numel(step_vec),j,numel(lambda_vec),1,numel(it_vec),1,numel(alpha_vec));
+                    
+                    parameters_method =  {step_vec(i),lambda_vec(j),5000,alpha_vec(1),it_vec(1)};
+                    Cout = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random_CV,0,0,use_cost_weights,dynamic_feat_transfo,feat_vec_dummy);
+                    BER_Te(i,j) = Cout.BER_Te;
+                    BER_Tr(i,j) = Cout.BER_Tr;
+                    kappa_Te(i,j) = Cout.kappa_Te;
+                    kappa_Tr(i,j) = Cout.kappa_Tr;
+                    OA_Te(i,j) = Cout.OA_Te;
+                    OA_Tr(i,j) = Cout.OA_Tr;  
+                                        
+                %end
+            %end
+        end
+    end
+    
+end
+    
+%%
+if 0
+
+kappa_max = max(kappa_Te(:));
+fprintf('%2.2f%% \n',100*kappa_max);
+n = 1;
+
+for i=1:numel(step_vec)
+    for j=1:numel(lambda_vec)
+        for k=1:numel(it_vec)
+            for l=1:numel(alpha_vec)
+                
+                if kappa_Te(i,j,l,k) == kappa_max
+                    
+                    idx(n,:) == [i j l k];
+                    fprintf('%5.8f %5.2f %2.2f %u \n',step_vec(i),lambda_vec(j),alpha_vec(l),it_vec(k));
+                    n = n+1;
+                    
+                end
+                
+            end
+        end
+    end
+end
+
+end
+
+
+    
+
 
     

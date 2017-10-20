@@ -20,10 +20,10 @@ CV_it = 10;
 random = true;
 verbose = false;
 illustration = false;
-use_weights = false;
+use_weights = true;
 apply_feat_transfo = false;
 feat_vec = [1:1:97]';
-dim_stop = 20;
+dim_stop = 40;
 
 % load the training matrix X
 [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);

@@ -57,9 +57,12 @@ function image_buffer(imageFile,saveDir,FrameNo)% generate matrix of 1's and 0's
     title=cell(length(boundaryInd),1);
 %     saveDir='D:\gpm\HabitClassification\case\20151202_0039-0054\Alexis classification scheme\2DS\inputDir\';
     for i=1:length(boundaryInd)
-        title{i}=sprintf('%s%d_%d_%d.mat',saveDir,hhmmss,FrameNo,i);
+        title{i}=sprintf('%s%d_%d_%d.png',saveDir,hhmmss,FrameNo,i);
         particle_mask=particle{i}';
-        save(title{i},'particle_mask');
+        if ~isempty(particle_mask)
+            % save(title{i},'particle_mask'); <- to save MatFile
+            imwrite(particle_mask,title{i},'png','BitDepth',8);
+        end
     end
 %     return imageData;
 end

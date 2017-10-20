@@ -42,7 +42,7 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
 
             % dimension related features 
             X(i,j) = roi.area; Xlab{j} = 'area'; j=j+1; %1
-            %X(i,j) = roi.Dmean; Xlab{j} = 'dim mean'; j=j+1;
+            %   X(i,j) = roi.Dmean; Xlab{j} = 'dim mean'; j=j+1;
             X(i,j) = roi.Dmax; Xlab{j} = 'Dmax'; j=j+1; %2
             X(i,j) = roi.width; Xlab{j} = 'width'; j=j+1; %3
             X(i,j) = roi.height; Xlab{j} = 'height'; j=j+1; %4
