@@ -15,9 +15,10 @@ clear all;
 tic;
 
 % Load IO paths
-label.campaigndir = '/home/praz/Documents/CPI_data/tmp1';
-label.outputdir_mat = '/home/praz/Documents/CPI_data/tmp2';
-label.outputdir_img = '/home/praz/Documents/CPI_data/tmp2';
+%label.campaigndir = '/home/kiko/Documents/PhD/airlab/SampleImage/CPI/Aggregate';
+label.campaigndir = '/media/kiko/Samoylov/CPI_data/tmp1';
+label.outputdir_mat = '/home/kiko/Documents/tmp';
+label.outputdir_img = '/home/kiko/Documents/tmp';
 % ...
 
 % Image processing parameters
@@ -26,7 +27,7 @@ process.probe = 'CPI';
 process.min_hole_area = 1;
 process.min_area_for_convex_hull = 15;
 process.min_area_for_truncated_ellipse_fit = 40;
-process.use_icpca = 1;
+process.use_icpca = 0;
 process.icpca_default = 0;
 process.save_results = 1;
 process.illustration = 0;
@@ -68,7 +69,7 @@ for i=1:length(img_list)
 
         switch info.ColorType
             case 'grayscale'
-                tmp_mat = imread(fullfile(label.campaigndir,img_list{i}));
+                tmp_mat = im2double(imread(fullfile(label.campaigndir,img_list{i})));
             case 'truecolor'
                 tmp_mat = rgb2gray(im2double(imread(fullfile(label.campaigndir,img_list{i}))));
             case 'indexed'
@@ -447,7 +448,7 @@ for i=1:length(img_list)
             
         elseif strcmp(process.probe,'CPI')
             img2save = DS.data_gs;
-            imwrite(img2save,fullfile(label.outputdir_img,DS.name),'png','BitDepth', 8);
+            imwrite(img2save,fullfile(label.outputdir_img,DS.name),'png','BitDepth',8);
             
         end
 
