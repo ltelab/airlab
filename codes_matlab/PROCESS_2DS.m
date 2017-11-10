@@ -10,40 +10,53 @@
 % Author : Christophe Praz (christophe.praz@epfl.ch)
 % Last update : May 2017
 % =========================================================================
-clear all;
+clearvars;
 
 tic;
 
 % Load IO paths
 %label.campaigndir = '/home/kiko/Documents/PhD/airlab/SampleImage/CPI/Aggregate';
-label.campaigndir = '/media/kiko/Samoylov/CPI_data/tmp1';
-label.outputdir_mat = '/home/kiko/Documents/tmp';
-label.outputdir_img = '/home/kiko/Documents/tmp';
+label.campaigndir = '/home/praz/Documents/CPI_data/20151201_cropped/part13';
+label.outputdir_mat = '/home/praz/Documents/CPI_data/20151201_cropped/processed/part13/mat';
+label.outputdir_img = '/home/praz/Documents/CPI_data/20151201_cropped/processed/part13/img';
 % ...
 
 % Image processing parameters
 process.probe = 'CPI';
 
-process.min_hole_area = 1;
+process.min_hole_area = 10;
 process.min_area_for_convex_hull = 15;
 process.min_area_for_truncated_ellipse_fit = 40;
-process.use_icpca = 0;
+process.use_icpca = 1;
 process.icpca_default = 0;
-process.save_results = 1;
+process.save_mat = 1;
+process.save_img = 1;
 process.illustration = 0;
 
 % for 2DS (mostly)
-process.smoothen_perim = 0;
+process.smoothen_perim = 1;
 % for CPI (mostly)
-process.rm_white_boarders = false;
+process.rm_white_boarders = true;
 process.white_thresh = 0.95;
-process.graythresh_multiplier = 1.3;
+process.graythresh_multiplier_sup = 1.3;
+process.graythresh_multiplier_inf1 = 0.7;
+process.graythresh_multiplier_inf2 = 0.5;
+process.graythresh_multiplier_inf3 = 0.3;
+process.discard_noisy_img = true;
+process.noise_threshold = 4.1; % 4.0-4.1 for adjusted img, 4.2 for raw img
 
 
 % Upload particle images present in campaigndir
 img_list = dir(fullfile(label.campaigndir,'*.png'));
 img_list = {img_list.name};
 img_list = img_list';
+
+img_list2 = dir(fullfile(label.campaigndir,'*.jpg'));
+img_list2 = {img_list2.name};
+img_list2 = img_list2';
+
+img_list = [img_list; img_list2];
+
 
 fitted_OA_vec = [];
 eq_radius = [];
@@ -54,14 +67,16 @@ for i=1:length(img_list)
     fprintf('Processing %s...\n',img_list{i});
 
     % filename
-    DS.name = img_list{i};
+    DS.name = img_list{i}(1:end-4);
+    DS.ext = img_list{i}(end-3:end);
     DS.probe = process.probe;
     
     % load data
     if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
         tmp_mat = imread(fullfile(label.campaigndir,img_list{i})); % grayscale or truecolor
         DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
-        DS.data(tmp_mat(:,:,1)==0) = true;   
+        DS.data(tmp_mat(:,:,1)==0) = true; 
+        DS.raw_data = DS.data;
     
     % CPI probe requires a little bit more of processing as images are true colors and generally contain noise
     elseif strcmp(process.probe,'CPI')
@@ -69,18 +84,23 @@ for i=1:length(img_list)
 
         switch info.ColorType
             case 'grayscale'
-                tmp_mat = im2double(imread(fullfile(label.campaigndir,img_list{i})));
+                img_ini = im2double(imread(fullfile(label.campaigndir,img_list{i})));
+                tmp_mat = img_ini;
             case 'truecolor'
-                tmp_mat = rgb2gray(im2double(imread(fullfile(label.campaigndir,img_list{i}))));
+                img_ini = imread(fullfile(label.campaigndir,img_list{i}));
+                tmp_mat = rgb2gray(im2double(img_ini));
+                [img_ini, map] = rgb2ind(img_ini,256);
             case 'indexed'
-                [X, map] = imread(fullfile(label.campaigndir,img_list{i}));
-                tmp_mat = im2double(ind2gray(X, map));
+                [img_ini, map] = imread(fullfile(label.campaigndir,img_list{i}));
+                tmp_mat = im2double(ind2gray(img_ini, map));
             otherwise
                 error('invalid image type')
         end
         %tmp_mat = rgb2gray(im2double(imread(fullfile(label.campaigndir,img_list{i}))));
         tmp_mat_ini = tmp_mat;
-    
+        [DS.h_ini,DS.w_ini] = size(tmp_mat_ini);
+        DS.raw_data = tmp_mat;
+        
         % detect and remove the "white boarders around the image"
         if process.rm_white_boarders
             med_col = median(tmp_mat,1);
@@ -91,27 +111,80 @@ for i=1:length(img_list)
             
         end
     
-        %figure; imshow(tmp_mat);
+        % image adjusted to better identify background noise (and detect noisy img, if desired)
+        tmp_mat_corr = imadjust(tmp_mat);
+        
+        % for CPI only : detect "pure noise" images and discard them
+        if process.discard_noisy_img
+            
+            img_HISE = fmeasure(tmp_mat_corr,'HISE',[]);
+            
+            if img_HISE < process.noise_threshold
+                 
+                DS.status = 'noisy';
+                DS.data_gs = tmp_mat;
+                
+                if process.save_mat
 
-        % optional smoothing (bad)
-        %tmp_mat = conv2(tmp_mat,double(ones(3)/9),'full'); % by default : 'valid' 
-        % figure; imshow(tmp_mat);
+                    if ~exist(label.outputdir_mat,'dir')
+                        mkdir(label.outputdir_mat);
+                    end
+                    save_mat(label.outputdir_mat,strcat(DS.name,'.mat'),DS);
+
+                end
+                
+                if process.save_img
+                    % the .png cropped particle image
+                    if ~exist(label.outputdir_img,'dir')
+                        mkdir(label.outputdir_img);
+                    end
+                    if ~exist(fullfile(label.outputdir_img,'noisy'),'dir')
+                        mkdir(fullfile(label.outputdir_img,'noisy'));
+                    end
+                    imwrite(img_ini,fullfile(label.outputdir_img,'noisy',strcat(DS.name,'.png')),'png','BitDepth',8);
+                end
+                
+                continue;
+                
+            end
     
+        end
+            
+        
         % tricky part : binarize the image
         bw_mask_ini = [];
-        bw_mask_ini{1} = imfill(~imbinarize(tmp_mat,graythresh(tmp_mat)),'holes'); % alternative 1 
-        bw_mask_ini{2} = imfill(~imbinarize(tmp_mat,process.graythresh_multiplier*graythresh(tmp_mat)),'holes'); % alternative 2
+        bw_mask_ini{1} = ~imbinarize(tmp_mat_corr); % alternative 1 
+        bw_mask_ini{2} = ~imbinarize(tmp_mat_corr,process.graythresh_multiplier_sup*graythresh(tmp_mat_corr)); % alternative 2
+        bw_mask_ini{3} = ~imbinarize(tmp_mat_corr,process.graythresh_multiplier_inf1*graythresh(tmp_mat_corr)); % alternative 3
+        bw_mask_ini{4} = ~imbinarize(tmp_mat_corr,process.graythresh_multiplier_inf2*graythresh(tmp_mat_corr)); % alternative 4
+        bw_mask_ini{5} = ~imbinarize(tmp_mat_corr,process.graythresh_multiplier_inf3*graythresh(tmp_mat_corr)); % alternative 5
         %select best alternative based on particle shape complexity
-        score_alt_1 = sum(sum(bwperim(bw_mask_ini{1})))/(2*sqrt(pi*bwarea(bw_mask_ini{1})));
-        score_alt_2 = sum(sum(bwperim(bw_mask_ini{2})))/(2*sqrt(pi*bwarea(bw_mask_ini{2})));
-        [~,idx_alt] = min([score_alt_1 score_alt_2]);
+        for j=1:numel(bw_mask_ini)
+            tmp_roi = regionprops(bw_mask_ini{j},'Image','Area','Perimeter','PixelList');
+            tmp_areas = [tmp_roi.Area];
+            [area_max,idx_max] = max(tmp_areas);
+            perim_max = tmp_roi(idx_max).Perimeter;
+            score_alt(j) = perim_max/(2*sqrt(pi*area_max));
+            perim = tmp_roi(idx_max).PixelList;
+
+            idx_touch_edge = find(perim(:,1) == 1 | perim(:,1) == DS.w_ini | perim(:,2) == 1 | perim == DS.h_ini); 
+            score_alt2(j) = 1 + numel(idx_touch_edge)/(2*(DS.h_ini+DS.w_ini));  % <- perim_max initially here
+            score_alt3(j) = score_alt2(j) * score_alt(j); 
+          
+        end
+            
+        %score_alt_1 = sum(sum(bwperim(bw_mask_ini{1})))/(2*sqrt(pi*bwarea(bw_mask_ini{1})))
+        %score_alt_2 = sum(sum(bwperim(bw_mask_ini{2})))/(2*sqrt(pi*bwarea(bw_mask_ini{2})))
+        %score_alt_3 = sum(sum(bwperim(bw_mask_ini{3})))/(2*sqrt(pi*bwarea(bw_mask_ini{3})))
+        %[~,idx_alt] = min([score_alt_1 score_alt_2 score_alt_3]);
+        [~,idx_alt] = min(score_alt3);
         bw_mask_ini = bw_mask_ini{idx_alt};
         %bw_mask_ini = ~bw_mask_ini;
         %figure; imshow(bw_mask_ini);
-        bw_mask_fat = edge_detection(bw_mask_ini,10,0);
+        %bw_mask_fat = edge_detection(bw_mask_ini,2,0);
         bw_mask_ini_filled = imfill(bw_mask_ini,'holes');
         bw_holes_mask = logical(bw_mask_ini_filled - bw_mask_ini);
-        bw_mask = bw_mask_fat;
+        bw_mask = bw_mask_ini;
         bw_mask(bw_holes_mask) = 0;
         %figure; imshow(bw_mask); 
         % at that point bw_mask should look like standard 2DS image
@@ -129,47 +202,22 @@ for i=1:length(img_list)
          fprintf('Largest ROI found is smaller than %u pixels, particle classified as Small Particle (SP). \n',process.min_area_for_convex_hull);
          n_skipped = n_skipped + 1;
          DS.is2small = true;
+         DS.status = 'too small';
+         if process.save_mat
+            if ~exist(label.outputdir_mat,'dir')
+                mkdir(label.outputdir_mat);
+            end
+            save_mat(label.outputdir_mat,strcat(DS.name,'.mat'),DS);
+         end 
+         continue;
+         
      else
          DS.is2small = false;
+         DS.status = 'good';
      end
      % check the 2nd maximum to detect particles which might be "split"
      tmp_areas(idx_selected) = [];
      max2 = max(tmp_areas);
-
-     % here is a small code to toroughly retrieve the particle outline
-     % using an edge dilation/erosion procedure. This feature is currently
-     % disabled as the classification is performing better without 
-%      if max2 > 0.1*max1
-%          fprintf('Warning: second largest ROI detected measures %2.1f of the main ROI area. \n',max2/max1*100);
-% 
-%         % test (optimal ?)
-%         DS.data_original = DS.data;
-%         DS.data_bulk = edge_detection(DS.data);
-%         % detect the biggest roi in data_bulk
-%         all_roi = regionprops(DS.data_bulk,'Image','BoundingBox','SubarrayIdx', ...
-%                 'PixelList','PixelIdxList','Perimeter','Area','MajorAxisLength', ...
-%                 'Orientation','MinorAxisLength','Centroid'); 
-%         tmp_areas = [all_roi.Area];
-%         [max1,idx_selected] = max(tmp_areas);
-%         % keep only the biggest roi
-%         DS.data_bulk = false(size(DS.data_bulk));
-%         DS.data_bulk(all_roi(idx_selected).PixelIdxList) = true;
-%         % retrieve the perimeter of this roi
-%         B = bwboundaries(DS.data_bulk,'noholes');
-%         if numel(B) > 1
-%             disp('Warning: more than 1 particle detected on data_bulk !!!');
-%         end
-%         B = B{1};
-%         DS.x_perim = B(:,2);
-%         DS.y_perim = B(:,1); 
-%         DS.perim = length(DS.x_perim);
-%         DS.data_bulk_perim = bwperim(DS.data_bulk);
-%         % recreate the flake using this perimeter
-%         DS.data = DS.data_bulk;
-%         DS.data(~DS.data_original) = false;
-%         DS.data(DS.data_bulk_perim) = true;
-% 
-%     end
 
     mask = false(size(DS.data));
     mask(all_roi(idx_selected).PixelIdxList) = true;
@@ -185,14 +233,19 @@ for i=1:length(img_list)
 
     % before cropping DS.data, determine if the flake is touching the boarder and if yes, by how much
     [h,w] = size(DS.data);
-    idx = find(DS.x_perim == 1 | DS.x_perim == w | DS.y_perim == 1 | DS.y_perim == h);    
+    idx = find(DS.x_perim == 1 | DS.x_perim == w | DS.y_perim == 1 | DS.y_perim == h); 
+    idx2 = find(DS.x_perim == 2 | DS.x_perim == w-1 | DS.y_perim == 2 | DS.y_perim == h-1); 
     if ~isempty(idx)
         DS.touch_edge = 1;
         DS.touch_edge_Npix = length(idx);
         DS.touch_edge_ratio = length(idx)/DS.perim;
+        DS.touch_edge_ratio_2 = length(idx2)/DS.perim;
+        DS.frame_fraction = length(idx)/(2*(DS.w_ini+DS.h_ini));
     else
         DS.touch_edge = 0;
         DS.touch_edge_ratio = 0;
+        DS.touch_edge_ratio_2 = 0;
+        DS.frame_fraction = 0;
     end
 
     % crop around the particle mask and clean the leftover pixels around the roi in the cropped rectangle
@@ -202,6 +255,38 @@ for i=1:length(img_list)
     crop_height = floor(all_roi(idx_selected).BoundingBox(4));
     DS.data = DS.data(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));  
     tmp_mat_cropped = tmp_mat(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1)); 
+    img_ini_cropped = img_ini(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1)); 
+    
+    % compute the holes before smoothing (which requires filling)
+    tmp_filled = imfill(DS.data,'holes');
+    DS.bw_holes_mask = logical(tmp_filled - DS.data);
+    
+    
+    if process.smoothen_perim
+%         %figure;
+        %subplot(121);
+        %imshow(DS.bw_mask);
+        % petit test lissage du perimetre
+        DS.data = edge_detection(DS.data,3,0);
+        tmp_rois = regionprops(DS.data,'Area','PixelIdxList');
+        
+        if numel(tmp_rois) > 1
+            [~,idx_main] = max([tmp_rois.Area]);
+            DS.data(:) = false;
+            DS.data(tmp_rois(idx_main).PixelIdxList) = true;
+        end
+        % remove holes but keep perimeter
+        tmp_perim = bwperim(DS.data);
+        DS.data (DS.bw_holes_mask) = 0;
+        DS.data(tmp_perim) = 1;
+        
+        %DS.bw_mask_filled = imfill(DS.bw_mask,'holes');
+        %DS.data(DS.bw_holes_mask) = 0;
+
+        %subplot(122);
+        %imshow(DS.bw_mask);
+
+    end
 
     % retrieve the BW mask of the selected particle (clean leftover pixels)
     % for binary images, the BW mask == data
@@ -226,32 +311,43 @@ for i=1:length(img_list)
     idx = find(holes_area >= process.min_hole_area);
     DS.nb_holes = numel(idx);
     
-    % Update grayscale image of the snowflake
-    DS.data_gs = tmp_mat_cropped;
-    DS.data_gs(~DS.bw_mask_filled) = 1; % 1 = white in grayscale
-    
-    
-    
-    if process.smoothen_perim
-        %figure;
-        %subplot(121);
-        %imshow(DS.bw_mask);
+    if strcmp(process.probe,'CPI') 
+        
+        % Retrieve grayscale image of the cropped snowflake
+        DS.data_gs = tmp_mat_cropped;
+        DS.data_gs(~DS.bw_mask_filled) = 1; % 1 = white in grayscale
+        % remapping and inversing colors in order to get something similar to MASC images
+        DS.data_gs = uint8((1-DS.data_gs).*255);
+        
+        % Retrieve original "bluescale" image
+        DS.data_bs = img_ini_cropped;
+        DS.data_bs = ind2rgb(DS.data_bs,map);
+        RGB_vals = [1 1 1];
+        frame1 = DS.data_bs(:,:,1); frame1(~DS.bw_mask_filled) = RGB_vals(1);
+        frame2 = DS.data_bs(:,:,2); frame2(~DS.bw_mask_filled) = RGB_vals(2);
+        frame3 = DS.data_bs(:,:,3); frame3(~DS.bw_mask_filled) = RGB_vals(3);
+        DS.data_bs(:,:,1) = frame1;
+        DS.data_bs(:,:,2) = frame2;
+        DS.data_bs(:,:,3) = frame3;
 
-        % petit test lissage du perimetre
-        DS.data = edge_detection(DS.data,0);
-        tmp_rois = regionprops(DS.data,'Area','PixelIdxList');
-        if numel(tmp_rois) > 1
-            [~,idx_main] = max([tmp_rois.Area]);
-            DS.data(:) = false;
-            DS.data(tmp_rois(idx_main).PixelIdxList) = true;
-        end
-        DS.bw_mask_filled = imfill(DS.bw_mask,'holes');
-        DS.data(DS.bw_holes_mask) = 0;
+        % compute textural descriptors
+        DS.mean_intens = mean(DS.data_gs(DS.bw_mask_filled))/255;
+        DS.max_intens = double(max(DS.data_gs(DS.bw_mask_filled)))/255;
+        range_array = rangefilt(DS.data_gs);
+        DS.range_intens = mean(range_array(DS.bw_mask_filled))/255;
+        DS.focus = DS.mean_intens * DS.range_intens;
+        DS.std = std2(DS.data_gs(DS.bw_mask_filled));
+        local_std = stdfilt(DS.data_gs);
+        DS.local_std = mean(local_std(DS.bw_mask_filled)); 
 
-        %subplot(122);
-        %imshow(DS.bw_mask);
+        DS.lap = fmeasure(DS.data_gs,'LAPM',[]); 
+        DS.hist_entropy = fmeasure(DS.data_gs,'HISE',[]);
+        DS.wavs = fmeasure(DS.data_gs,'WAVS',[]);
 
+        DS.H = haralick_props(DS.data_gs,0);
+    
     end
+    
 
     % the area + equivalent radius
     [DS.y DS.x] = find(DS.bw_mask_filled > 0);
@@ -402,8 +498,8 @@ for i=1:length(img_list)
             
         else
         
-        icpca.filePath = fullfile(label.campaigndir,DS.name);
-        icpca.outputDir = '/home/praz/Documents/IC-PCA/figs/2DS';
+        icpca.filePath = fullfile(label.campaigndir,strcat(DS.name,DS.ext));
+        icpca.outputDir = '/home/praz/Documents/IC-PCA/figs/CPI';
         icpca.plots = true;
         icpca.debug = false;
         icpca.enableFilters = false;
@@ -428,13 +524,17 @@ for i=1:length(img_list)
     end
     
     % save results in a .mat structure and the cropped particle in a .png
-    if process.save_results
+    if process.save_mat
 
         % the .mat structure
         if ~exist(label.outputdir_mat,'dir')
             mkdir(label.outputdir_mat);
         end
-        save_mat(label.outputdir_mat,strcat(DS.name(1:end-4),'.mat'),DS);
+        save_mat(label.outputdir_mat,strcat(DS.name,'.mat'),DS);
+        
+    end
+    
+    if process.save_img
 
         % the .png cropped particle image
         if ~exist(label.outputdir_img,'dir')
@@ -444,11 +544,11 @@ for i=1:length(img_list)
             img2save = DS.data;
             img2save(DS.data) = false; % reverse colors
             img2save(~DS.data) = true;
-            imwrite(img2save.*255,fullfile(label.outputdir_img,DS.name),'png','BitDepth', 8);
+            imwrite(img2save.*255,fullfile(label.outputdir_img,strcat(DS.name,'.png')),'png','BitDepth', 8);
             
-        elseif strcmp(process.probe,'CPI')
-            img2save = DS.data_gs;
-            imwrite(img2save,fullfile(label.outputdir_img,DS.name),'png','BitDepth',8);
+        elseif strcmp(process.probe,'CPI') 
+            img2save = DS.data_bs;
+            imwrite(img2save,fullfile(label.outputdir_img,strcat(DS.name,'.png')),'png','BitDepth',8);
             
         end
 

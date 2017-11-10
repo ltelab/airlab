@@ -1,12 +1,20 @@
 % crop_CPI
 clear all; close all;
 
-datadir = '/home/praz/Documents/CPI_data/20151112/1854';
-outdir = '/home/praz/Documents/CPI_data/tmp1';
+datadir = '/home/praz/Documents/CPI_data/20151201';
+outdir = '/home/praz/Documents/CPI_data/20151201_cropped';
 
-all = dir(fullfile(datadir,'**','_CPI__20151112_192955_964_.png'));
+all = dir(fullfile(datadir,'**','*.png'));
 all_name = {all.name}';
 all_folder = {all.folder}';
+
+
+count = 1;
+part = 1;
+subdir = sprintf('part%u',part);
+if ~exist(fullfile(outdir,subdir),'dir')
+    mkdir(fullfile(outdir,subdir));
+end
 
 for k = 1:numel(all_name)
 
@@ -21,6 +29,7 @@ for k = 1:numel(all_name)
             im = rgb2gray(im2double(filename));
         case 'indexed'
             [X, map] = imread(filename);
+            %figure; imshow(X,map);
             im = im2double(ind2gray(X, map));
         otherwise
             error('invalid image type')
@@ -44,10 +53,19 @@ for k = 1:numel(all_name)
         crop_y = ceil(ROI(i).BoundingBox(1));
         crop_width = floor(ROI(i).BoundingBox(3));
         crop_height = floor(ROI(i).BoundingBox(4));
-        sub_roi = im(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));
-        RGB = ind2rgb(sub_roi.*255,map);
-        imwrite(sub_roi,fullfile(outdir,sprintf('part%u_%s',i,all_name{k})));
-
+        sub_roi = X(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));
+        %sub_roi = uint8(sub_roi.*255);
+        %figure; imshow(sub_roi,map);
+        %RGB = ind2rgb(sub_roi.*255,map);
+        if mod(count,5000) == 0
+            part = part + 1;
+            subdir = sprintf('part%u',part);
+            if ~exist(fullfile(outdir,subdir),'dir')
+                mkdir(fullfile(outdir,subdir));
+            end
+        end
+        imwrite(sub_roi,map,fullfile(outdir,subdir,sprintf('part%u_%s',i,all_name{k})));
+        count = count + 1;
         %sub_roi = im(ROI(i).PixelIdxList);
         %figure;imshow(RGB,map);    
 

@@ -1,12 +1,12 @@
 clearvars; close all;
 
 
-K=4; 
-N_it=10; 
+K=10; 
+N_it=3; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = '2DS';
+target = 'CPI';
 normalization_type = 'standardization';
 dynamic_feat_transfo = true; %<- this option is useless here as dynamic feature transformation is always enabled
 
@@ -18,6 +18,8 @@ label_version = '1.1';
 
 if strcmp(target,'2DS')
     parameters_method =  {0.0001,0.01,10000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
+elseif strcmp(target,'CPI')
+    parameters_method = {0.0001,0,5000,0,5000};
 elseif strcmp(target,'HVPS')
     parameters_method = {0.001,1,1000,0,10000};
 elseif strcmp(target,'riming')
@@ -33,6 +35,8 @@ if strcmp(target,'2DS')
     dir_data = '/home/praz/Documents/Cloud_Probes/training_set/2DS';
 elseif strcmp(target,'HVPS')
     dir_data = '/home/praz/Documents/Cloud_Probes/training_set/HVPS';
+elseif strcmp(target,'CPI')
+    dir_data = '/home/praz/Documents/airlab/training_set/CPI12';
 end
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
@@ -44,8 +48,8 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('features_opt_4fold_10it_alpha0.0001_lambda0.01_2DS_3500samples.mat');
-n_desc = 17;
+load('feat_opt/CPI/rand_4fold_10it_2417samples.mat');
+n_desc = 20;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
 feat_vec = [feat_vec];
@@ -70,7 +74,6 @@ y(idx) = [];
 idx_unknown = find(y<=0);
 if ~isempty(idx_unknown)
     y(idx_unknown) = [];
-    yR(idx_unknown) = [];
     X(idx_unknown,:) = [];
     data_picnames(idx_unknown) = [];
     data_filenames(idx_unknown) = [];
@@ -82,6 +85,8 @@ if strcmp(target,'2DS')
     labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
 elseif strcmp(target,'HVPS')
     labels = {'Agg','Col','Gra','Ros','Sph'};
+elseif strcmp(target,'CPI')
+    labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
 end
 
 y = real(y);

@@ -10,10 +10,10 @@ clearvars ; close all;
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = '2DS';
+target = 'CPI';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
-parameters_method = {0.0001,0.01,10000,0,5000};
+parameters_method = {0.0001,0.1,5000,0,5000};
 
 features_ranking = true;
 display_confmat = true;
@@ -23,7 +23,7 @@ label_version = '1.1';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % path to training data
-dir_data = '/home/praz/Documents/airlab/training_set/2DS';
+dir_data = '/home/praz/Documents/airlab/training_set/CPI12';
 
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
@@ -35,8 +35,8 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('features_opt_4fold_10it_alpha0.0001_lambda0.01_2DS_3500samples.mat');
-n_desc = 17;
+load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+n_desc = 15;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
 feat_vec = [feat_vec];
@@ -59,7 +59,6 @@ y(idx) = [];
 idx_unknown = find(y<=0);
 if ~isempty(idx_unknown)
     y(idx_unknown) = [];
-    yR(idx_unknown) = [];
     X(idx_unknown,:) = [];
     data_picnames(idx_unknown) = [];
     data_filenames(idx_unknown) = [];
@@ -71,6 +70,8 @@ if strcmp(target,'2DS')
     labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
 elseif strcmp(target,'HVPS')
     labels = {'Agg','Col','Gra','Ros','Sph'};
+elseif strcmp(target,'CPI')
+    labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
 end
 
 N = size(X,1);

@@ -1,8 +1,9 @@
 % small script to assign labels to airborne probes particles
 clear; close all;
 
-dirname = '/home/praz/Documents/airlab/training_set/2DS_smooth';
+dirname = '/home/praz/Documents/airlab/training_set/CPI4';
 
+probe = 'CPI';
 save_results = true;
 
 file_list = dir(fullfile(dirname,'*.mat'));
@@ -33,6 +34,9 @@ for i=1:length(file_list)
             roi.label_ID = 5;
         case 'Oth'
             roi.label_name = 'Other';
+            roi.label_ID = 6;
+        case 'Pla'
+            roi.label_name = 'Plate';
             roi.label_ID = 6;
         otherwise
             roi.label_name = 'Unknown/Error';

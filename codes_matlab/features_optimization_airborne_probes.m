@@ -4,8 +4,8 @@ clear; close all;
 classif_subject = 'geometry';
 
 % load data
-dir_data = '/home/praz/Documents/airlab/training_set/2DS_smooth';
-data_filenames = dir(fullfile(dir_data,'20*.mat'));
+dir_data = '/home/praz/Documents/airlab/training_set/CPI12';
+data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
 data_picnames = dir(fullfile(dir_data,'*.png'));
 data_picnames = {data_picnames.name}';
@@ -22,8 +22,9 @@ verbose = false;
 illustration = false;
 use_weights = true;
 apply_feat_transfo = false;
-feat_vec = [1:1:97]';
-dim_stop = 40;
+feat_vec = [1:1:86]';%[1:1:111]';
+
+dim_stop = 25;
 
 % load the training matrix X
 [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
@@ -40,8 +41,18 @@ idx = find(isnan(sum(X,2)));
 X(idx,:) = [];
 y(idx) = [];
 
-labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
-parameters_method = {0.0001,0.01,10000,0,5000}; %{0.001,1,10000,0,10000};
+% remove unknown labels
+idx_unknown = find(y<=0);
+if ~isempty(idx_unknown)
+    y(idx_unknown) = [];
+    X(idx_unknown,:) = [];
+    data_picnames(idx_unknown) = [];
+    data_filenames(idx_unknown) = [];
+    fprintf('%u samples discarded because not labelled correctly \n',length(idx_unknown));
+end
+
+labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+parameters_method =  {0.0001,0.1,5000,0,5000}; %{0.001,1,10000,0,10000};
 %parameters_method = {100,0.01,'rbf'};
 
 %% Features transformation

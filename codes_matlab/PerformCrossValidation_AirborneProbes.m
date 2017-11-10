@@ -3,21 +3,24 @@ clear; close all;
 %% User parameters & initialisation
 % User parameters
 K=4; 
-N_it=10; 
+N_it=15; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = '2DS';
+target = 'CPI';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
-random_CV = false;
+random_CV = true;
 grid_search = false;
+disp_summary = true;
 
 % Path to training data
 if strcmp(target,'2DS') || strcmp(target,'svm')
-    dir_data = '../training_set/2DS_smooth';
+    dir_data = '../training_set/2DS';
 elseif strcmp(target,'HVPS')
     dir_data = '../training_set/HVPS';
+elseif strcmp(target,'CPI')
+    dir_data = '../training_set/CPI12';
 end
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
@@ -29,14 +32,16 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('feat_opt/features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat');
-n_desc = 20;
+% best for 2-DS : features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat
+% best for CPI : feat_opt/CPI/rand_4fold_10it_1032samples.mat
+load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+n_desc = 15;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
-feat_vec = [feat_vec];
+%feat_vec = [feat_vec; [99:111]'];
 % add ratio touching the boarder ?
-icpca_feats = []';
-feat_vec = [feat_vec; icpca_feats];
+%icpca_feats = []';
+%feat_vec = [feat_vec; icpca_feats];
 %feat_vec(end+1) = 68;
 %feat_vec(end+1) = 69;
 
@@ -45,6 +50,8 @@ if strcmp(target,'2DS')
     parameters_method =  {0.00014384,0.38,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda // after grid search with 20 features : {0.00016681,0.22,5000,0,5000} // fine tuning : {0.00014384,0.38,5000,0,5000}
 elseif strcmp(target,'HVPS')
     parameters_method = {0.001,1,10000,0,10000};
+elseif strcmp(target,'CPI')
+    parameters_method = {0.0001,0.1,5000,0,5000};
 elseif strcmp(target,'riming')
     parameters_method = {0.0001,0.01,1000,0,10000};
 elseif strcmp(target,'melting')
@@ -68,11 +75,15 @@ idx = find(isnan(sum(X,2)));
 X(idx,:) = [];
 y(idx) = [];
 
+% remove truncated particles
+% idx = find(X(:,15) > 0.325 & y < 5);
+% X(idx,:) = [];
+% y(idx) = [];
+
 % remove unknown labels
 idx_unknown = find(y<=0);
 if ~isempty(idx_unknown)
     y(idx_unknown) = [];
-    yR(idx_unknown) = [];
     X(idx_unknown,:) = [];
     data_picnames(idx_unknown) = [];
     data_filenames(idx_unknown) = [];
@@ -84,6 +95,19 @@ if strcmp(target,'2DS')
     labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
 elseif strcmp(target,'HVPS')
     labels = {'Agg','Col','Gra','Ros','Sph'};
+elseif strcmp(target,'CPI')
+    labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+end
+
+% summary
+if disp_summary
+   fprintf('\n\n*****************************\n');
+   for i=1:numel(unique(y))
+       
+       fprintf('Class %u (%s) : %5u samples (%2.1f%%) \n',i,labels{i},sum(y==i),100*sum(y==i)/numel(y));
+       
+   end
+   fprintf('*****************************\n'); 
 end
 
 
