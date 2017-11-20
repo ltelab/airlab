@@ -1,9 +1,9 @@
 % small script to assign labels to airborne probes particles
 clear; close all;
 
-dirname = '/home/praz/Documents/airlab/training_set/CPI4';
+dirname = '/home/kiko/Documents/PhD/airlab/training_set/2DS_test';
 
-probe = 'CPI';
+probe = '2DS';
 save_results = true;
 
 file_list = dir(fullfile(dirname,'*.mat'));

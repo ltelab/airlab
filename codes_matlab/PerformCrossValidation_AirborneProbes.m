@@ -3,11 +3,11 @@ clear; close all;
 %% User parameters & initialisation
 % User parameters
 K=4; 
-N_it=15; 
+N_it=10; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = 'CPI';
+target = '2DS';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
 random_CV = true;
@@ -16,7 +16,7 @@ disp_summary = true;
 
 % Path to training data
 if strcmp(target,'2DS') || strcmp(target,'svm')
-    dir_data = '../training_set/2DS';
+    dir_data = '../training_set/2DS_test';
 elseif strcmp(target,'HVPS')
     dir_data = '../training_set/HVPS';
 elseif strcmp(target,'CPI')
@@ -33,9 +33,9 @@ t_str_stop  = '20180101000000';
 
 % chose feat_vec here
 % best for 2-DS : features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat
-% best for CPI : feat_opt/CPI/rand_4fold_10it_1032samples.mat
-load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
-n_desc = 15;
+% best for CPI : feat_opt/CPI/rand_4fold_10it_more_samples.mat
+load('feat_opt/features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat');
+n_desc = 17;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
 %feat_vec = [feat_vec; [99:111]'];
