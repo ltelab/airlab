@@ -1,21 +1,27 @@
 % function to predict snow habit for a series of images contained in a folder
 % exemple:
-% dir_data = '/home/praz/Documents/Cloud_Probes_test_set/2DS';
-% t_str_start = '20150101000000';
-% t_str_stop = '20170101000000';
-% classifier = 'logit_test.mat';
-% the blurry threshold was used for MASC images. In the case of airborne
-% probes images (2DS, HVPS, CPI), just ignore it
-% truncated threshold for 2DS (CPI?) = 0.325 // CPI frame_fraction = 0.3
-
-function predict_snow_habit(dir_data,t_str_start,t_str_stop,classifier,save_results,save_validation_files,truncated_threshold,blurry_threshold)
+% dir_data = 'test_sample/2DS/Proc_images/mat';
+% probe = '2DS'
+% save_results = true
+% save_validation_files = true
+% truncated_threshold = 0.3
+function predict_snow_habit(dir_data,probe,save_results,save_validation_files,truncated_threshold)
  
     tic;
-
-    if nargin == 6
-        blurry_threshold = 0;
+    
+    if nargin < 5
+        truncated_threshold = 0.3;
     end
 
+    if strcmp(probe,'2DS')
+        classifier = 'logit_trained_models/logit_2DS_6classes_20171124.mat';
+    elseif strcmp(probe,'HVPS')
+        classifier = 'logit_trained_models/logit_HVPS_5classes_20170619.mat';
+        disp('Warning : HVPS classifier was trained on a very small dataset. Classification is uncertain.');
+    elseif strcmp(probe,'CPI')
+        classifier = 'logit_trained_models/logit_CPI_6classes_20171124.mat';       
+    end
+    
     load(classifier);
     normalization_type = classifier.normalization;
     prediction_scheme = classifier.N_labels;
@@ -24,7 +30,7 @@ function predict_snow_habit(dir_data,t_str_start,t_str_stop,classifier,save_resu
     %% load flakes descriptors
 
     % load the training matrix X
-    [X,Xlab,Xname,~] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,classifier.feat_vec);
+    [X,Xlab,Xname,~] = load_processed_2DS_data(dir_data,'','',classifier.feat_vec);
     
     % if X empty, we stop
     if isempty(X)
@@ -120,10 +126,18 @@ function predict_snow_habit(dir_data,t_str_start,t_str_stop,classifier,save_resu
                 if ~exist(fullfile(dir_data,'valid'),'dir')
                     mkdir(fullfile(dir_data,'valid'));
                 end
-                fig = figure('Visible','off'); 
-                subplot(1,2,1); imshow(roi.raw_data); title(roi.label_name); set(gca,'fontsize',9);
-                [p_max,idx_max] = max(roi.label_probs);
-                subplot(1,2,2); imshow(roi.data_gs); title(sprintf('ID_{max} : %u, p_{max}(%u) : %2.1f',idx_max,idx_max,p_max)); set(gca,'fontsize',9);
+                fig = figure('Visible','off');
+                if isfield(roi,'data_gs') % CPI
+                    subplot(1,2,1); imshow(roi.raw_data); title(roi.label_name); set(gca,'fontsize',9);
+                    [p_max,idx_max] = max(roi.label_probs);
+                    subplot(1,2,2); imshow(roi.data_gs); title(sprintf('ID_{max} : %u, p_{max}(%u) : %2.1f',idx_max,idx_max,p_max)); set(gca,'fontsize',9);
+  
+                else
+                    [p_max,~] = max(roi.label_probs);
+                    imshow(~roi.raw_data); title(sprintf('habit : %s -- prob = %2.1f',roi.label_name,p_max)); set(gca,'fontsize',9);
+                    %subplot(1,2,2); imshow(~roi.data); title(sprintf('ID_{max} : %u, p_{max}(%u) : %2.1f',idx_max,idx_max,p_max)); set(gca,'fontsize',9);
+                    
+                end
                 figname = roi.name;
                 saveas(fig,fullfile(dir_data,'valid',figname),'png');   
             end

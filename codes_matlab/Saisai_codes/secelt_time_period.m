@@ -6,7 +6,7 @@ hour=ncread(imageFile,'hour');
 minute=ncread(imageFile,'minute');
 second=ncread(imageFile,'second');
 % saveDir='D:\gpm\HabitClassification\case\20151202_0039-0054\Alexis classification scheme\2DS\inputDir\';
-saveDir='/media/praz/Samoylov/Cloud_Probes/flight_20151201_whole_dataset/Images/';
+saveDir='/media/praz/Samoylov/Cloud_Probes/flight_20151201_whole_dataset/test_2ds_code/';
 %saveDir='/data/mcfarq/a/saisai/GPM/HabitClassification/case/20151201_230300-230359/2DS/inputDir/';
 %%
 startTime='000000';%hh:mm:ss
@@ -28,7 +28,7 @@ if process_all
     endFrame = numel(hour);
 end
 
-for i=39500:endFrame % <--- I stopped at 39'500 last time... should be enough :)
+for i=39500:39510%endFrame % <--- I stopped at 39'500 last time... should be enough :)
     image_buffer(imageFile,saveDir,i);
     fprintf('%u / %u \n',i,endFrame-startFrame+1)
 end

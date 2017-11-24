@@ -7,10 +7,7 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
 
     fprintf('Load processed data...');
 
-    if nargin > 1
-    
-        tmin = datenum(t_str_start,'yyyymmddHHMMSS');
-        tmax = datenum(t_str_stop,'yyyymmddHHMMSS');
+    if nargin > 1 && ~isempty(t_str_start) && ~isempty(t_str_stop)      
         
     else
         

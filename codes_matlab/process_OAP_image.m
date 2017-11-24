@@ -7,11 +7,23 @@ function process_OAP_image(img_current, label, process)
     
     % load data
     if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
-        tmp_mat = imread(fullfile(label.campaigndir,img_current)); % grayscale or truecolor
-        DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
-        DS.data(tmp_mat(:,:,1)==0) = true; 
-        DS.raw_data = DS.data;
-        [DS.h_ini,DS.w_ini] = size(DS.raw_data);
+        
+        if strcmp(process.input_img_type,'image')
+            tmp_mat = imread(fullfile(label.campaigndir,img_current)); % grayscale or truecolor
+            DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
+            DS.data(tmp_mat(:,:,1)==0) = true; 
+            DS.raw_data = DS.data;
+            [DS.h_ini,DS.w_ini] = size(DS.raw_data);
+        
+        elseif strcmp(process.input_img_type,'matfile')
+            tmp_mat = load(fullfile(label.campaigndir,img_current));
+            tmp_mat = tmp_mat.particle_mask;
+            DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
+            DS.data(~tmp_mat) = true;
+            DS.raw_data = DS.data;
+            [DS.h_ini,DS.w_ini] = size(DS.raw_data);
+             
+        end
     
     % CPI probe requires a little bit more of processing as images are true colors and generally contain noise
     elseif strcmp(process.probe,'CPI')
@@ -131,6 +143,11 @@ function process_OAP_image(img_current, label, process)
     all_roi = regionprops(DS.data,'Image','BoundingBox','SubarrayIdx', ...
          'PixelList','PixelIdxList','Perimeter','Area','MajorAxisLength', ...
          'Orientation','MinorAxisLength','Centroid'); 
+    % skip image if there is no roi on it (empty image, happens sometimes with 2DS)
+    if isempty(all_roi)
+        return;
+    end
+    
      tmp_areas = [all_roi.Area];
      [max1,idx_selected] = max(tmp_areas);
      if max1 < process.min_area_for_convex_hull
@@ -167,6 +184,7 @@ function process_OAP_image(img_current, label, process)
     DS.perim = length(DS.x_perim);        
 
     % before cropping DS.data, determine if the flake is touching the boarder and if yes, by how much
+    % to implement : edge_ratio for the filled particle!
     [h,w] = size(DS.data);
     idx = find(DS.x_perim == 1 | DS.x_perim == w | DS.y_perim == 1 | DS.y_perim == h); 
     idx2 = find(DS.x_perim == 2 | DS.x_perim == w-1 | DS.y_perim == 2 | DS.y_perim == h-1); 
@@ -175,12 +193,13 @@ function process_OAP_image(img_current, label, process)
         DS.touch_edge_Npix = length(idx);
         DS.touch_edge_ratio = length(idx)/DS.perim;
         DS.touch_edge_ratio_2 = length(idx2)/DS.perim;
-        DS.frame_fraction = length(idx)/(2*(DS.w_ini+DS.h_ini));
+        %DS.frame_fraction = length(idx)/(2*(DS.w_ini+DS.h_ini));
     else
         DS.touch_edge = 0;
+        DS.touch_edge_Npix = 0;
         DS.touch_edge_ratio = 0;
         DS.touch_edge_ratio_2 = 0;
-        DS.frame_fraction = 0;
+        %DS.frame_fraction = 0;
     end
 
     % crop around the particle mask and clean the leftover pixels around the roi in the cropped rectangle
@@ -188,7 +207,7 @@ function process_OAP_image(img_current, label, process)
     crop_y = ceil(all_roi(idx_selected).BoundingBox(1));
     crop_width = floor(all_roi(idx_selected).BoundingBox(3));
     crop_height = floor(all_roi(idx_selected).BoundingBox(4));
-    DS.data = DS.data(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));  
+    DS.data = DS.data(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1)); 
     tmp_mat_cropped = tmp_mat(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1));
     if strcmp(process.probe,'CPI') 
         img_ini_cropped = img_ini(crop_x:(crop_x+crop_height-1),crop_y:(crop_y+crop_width-1)); 
@@ -233,6 +252,7 @@ function process_OAP_image(img_current, label, process)
     DS.width = all_roi(idx_selected).BoundingBox(3);
     DS.height = all_roi(idx_selected).BoundingBox(4);
     DS.Dmean = 0.5*(DS.width + DS.height);
+    DS.frame_fraction = DS.touch_edge_Npix/(2*(DS.width+DS.height));
 
     % retrieve the fitted ellipse
     DS.E.a = all_roi(idx_selected).MajorAxisLength/2;

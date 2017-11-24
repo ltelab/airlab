@@ -1,7 +1,7 @@
 % small script to assign labels to airborne probes particles
 clear; close all;
 
-dirname = '/home/kiko/Documents/PhD/airlab/training_set/2DS_test';
+dirname = '/home/praz/Documents/airlab/training_set/2DS_4000_smooth0_icpca0/mat';
 
 probe = '2DS';
 save_results = true;

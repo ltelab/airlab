@@ -13,7 +13,7 @@ use_cost_weights = true;
 target = 'CPI';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
-parameters_method = {0.0001,0.1,5000,0,5000};
+parameters_method = {0.0001,0.1,5000,0,5000}; %{0.0001,0.1,5000,0,5000};
 
 features_ranking = true;
 display_confmat = true;
@@ -35,7 +35,12 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+if strcmp(target,'2DS')
+    load('feat_opt/features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat');
+elseif strcmp(target,'CPI')
+    load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+end
+
 n_desc = 15;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
