@@ -18,13 +18,13 @@ tic;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% USER PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % path to the raw images
-label.campaigndir = 'test_sample/CPI/Raw_images';
+label.campaigndir = '../SampleImage/CPI/merged_all';
 
 % path to the directory to save processed matfiles (.mat)
-label.outputdir_mat = 'test_sample/CPI/Proc_images/mat';
+label.outputdir_mat = '../training_set/CPI_smooth0_icpca1';
 
 % path to the directory to save processed images (.png)
-label.outputdir_img = 'test_sample/CPI/Proc_images/png';
+label.outputdir_img = '../training_set/CPI_smooth0_icpca1';
 
 % imaging probe. Can be : 2DS / HVPS / CPI
 process.probe = 'CPI';
@@ -33,7 +33,7 @@ process.probe = 'CPI';
 process.input_img_type = 'image';
 
 % run the code in parallel (true) or not (false)
-process.parallel = false;
+process.parallel = true;
 
 % save processed matfiles ? (true/false)
 process.save_mat = true;
@@ -69,9 +69,9 @@ if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
     process.discard_noisy_img = false;
 
 elseif strcmp(process.probe,'CPI')
-    process.icpca_default = false;
-    process.smoothen_perim = true;
-    process.discard_noisy_img = true;
+    process.icpca_default = 1; %default = false
+    process.smoothen_perim = 0; % default = true
+    process.discard_noisy_img = false;
     
 end
 

@@ -1,9 +1,9 @@
 % small script to assign labels to airborne probes particles
 clear; close all;
 
-dirname = '/home/praz/Documents/airlab/training_set/2DS_4000_smooth0_icpca0/mat';
+dirname = '/home/praz/Documents/airlab/training_set/CPI_smooth1_icpca1';
 
-probe = '2DS';
+probe = 'CPI';
 save_results = true;
 
 file_list = dir(fullfile(dirname,'*.mat'));
@@ -40,7 +40,7 @@ for i=1:length(file_list)
             roi.label_ID = 6;
         otherwise
             roi.label_name = 'Unknown/Error';
-            roi.label_ID = -1;
+            roi.label_ID = 5;
             fprintf('Warning : unexpected name for file %s \n',file_list{i});
     end
     

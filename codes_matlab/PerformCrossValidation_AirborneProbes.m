@@ -20,7 +20,7 @@ if strcmp(target,'2DS') || strcmp(target,'svm')
 elseif strcmp(target,'HVPS')
     dir_data = '../training_set/HVPS';
 elseif strcmp(target,'CPI')
-    dir_data = '../training_set/CPI12';
+    dir_data = '../training_set/CPI_smooth0_icpca0';
 end
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
@@ -34,7 +34,15 @@ t_str_stop  = '20180101000000';
 % chose feat_vec here
 % best for 2-DS : features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat
 % best for CPI : feat_opt/CPI/rand_4fold_10it_more_samples.mat
-load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+if strcmp(target,'2DS')
+    load('feat_opt/2DS/rand_4fold_10it_3990N_98D.mat');
+elseif strcmp(target,'HVPS')
+    load('feat_opt/features_opt_4fold_20it_alpha0.001_lambda1_HVPS.mat');
+elseif strcmp(target,'CPI')
+    load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+else
+    fprintf('Error : target %s not reckognized ! \n',target);
+end
 n_desc = 15;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
@@ -65,7 +73,7 @@ end
 %% Data loading
 
 % Load the training matrix X
-[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
+[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
 
 % Load the labels vector y
 y = load_2DS_labels(dir_data,t_str_start,t_str_stop);

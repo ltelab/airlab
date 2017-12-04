@@ -4,7 +4,7 @@ clear; close all;
 classif_subject = 'geometry';
 
 % load data
-dir_data = '/home/praz/Documents/airlab/training_set/CPI12';
+dir_data = '/home/praz/Documents/airlab/training_set/2DS_4000_smooth0_icpca1/mat';
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
 data_picnames = dir(fullfile(dir_data,'*.png'));
@@ -22,12 +22,12 @@ verbose = false;
 illustration = false;
 use_weights = true;
 apply_feat_transfo = false;
-feat_vec = [1:1:86]';%[1:1:111]';
+feat_vec = [1:1:98]';%[1:1:111]';
 
-dim_stop = 25;
+dim_stop = 40;
 
 % load the training matrix X
-[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
+[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
 %feat_vec(101) = [];
 %feat_vec([2 6 7 14 15 17 18 26 33 34 37 38 39 41:48 51 53 70 77 79 80 92]) = [];
 dim_ini = length(feat_vec);
@@ -51,7 +51,7 @@ if ~isempty(idx_unknown)
     fprintf('%u samples discarded because not labelled correctly \n',length(idx_unknown));
 end
 
-labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
 parameters_method =  {0.0001,0.1,5000,0,5000}; %{0.001,1,10000,0,10000};
 %parameters_method = {100,0.01,'rbf'};
 

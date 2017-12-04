@@ -2,11 +2,11 @@ clearvars; close all;
 
 
 K=10; 
-N_it=3; 
+N_it=20; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = 'CPI';
+target = '2DS';
 normalization_type = 'standardization';
 dynamic_feat_transfo = true; %<- this option is useless here as dynamic feature transformation is always enabled
 
@@ -17,7 +17,7 @@ label_version = '1.1';
 
 
 if strcmp(target,'2DS')
-    parameters_method =  {0.0001,0.01,10000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
+    parameters_method =  {0.00014384,0.1,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
 elseif strcmp(target,'CPI')
     parameters_method = {0.0001,0,5000,0,5000};
 elseif strcmp(target,'HVPS')
@@ -32,7 +32,7 @@ end
 
 % path to training data
 if strcmp(target,'2DS')
-    dir_data = '/home/praz/Documents/Cloud_Probes/training_set/2DS';
+    dir_data = '../training_set/2DS_4000_smooth0_icpca1/mat';
 elseif strcmp(target,'HVPS')
     dir_data = '/home/praz/Documents/Cloud_Probes/training_set/HVPS';
 elseif strcmp(target,'CPI')
@@ -48,8 +48,16 @@ t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-load('feat_opt/CPI/rand_4fold_10it_2417samples.mat');
-n_desc = 20;
+if strcmp(target,'2DS')
+    load('feat_opt/2DS/rand_4fold_10it_3990N_98D.mat');
+elseif strcmp(target,'HVPS')
+    load('feat_opt/features_opt_4fold_20it_alpha0.001_lambda1_HVPS.mat');
+elseif strcmp(target,'CPI')
+    load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+else
+    fprintf('Error : target %s not reckognized ! \n',target);
+end
+n_desc = 15;
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
 feat_vec = [feat_vec];
