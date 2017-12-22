@@ -4,7 +4,7 @@ clear; close all;
 classif_subject = 'geometry';
 
 % load data
-dir_data = '/home/praz/Documents/airlab/training_set/2DS_4000_smooth0_icpca1/mat';
+dir_data = '../training_set//CPI_smooth0_icpca0';
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
 data_picnames = dir(fullfile(dir_data,'*.png'));
@@ -22,7 +22,8 @@ verbose = false;
 illustration = false;
 use_weights = true;
 apply_feat_transfo = false;
-feat_vec = [1:1:98]';%[1:1:111]';
+%feat_vec = [1:1:98]';%[1:1:111]';
+feat_vec = [1:1:111]';
 
 dim_stop = 40;
 
@@ -51,7 +52,7 @@ if ~isempty(idx_unknown)
     fprintf('%u samples discarded because not labelled correctly \n',length(idx_unknown));
 end
 
-labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
+labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
 parameters_method =  {0.0001,0.1,5000,0,5000}; %{0.001,1,10000,0,10000};
 %parameters_method = {100,0.01,'rbf'};
 

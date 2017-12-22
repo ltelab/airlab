@@ -18,16 +18,16 @@ tic;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% USER PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % path to the raw images
-label.campaigndir = '../SampleImage/CPI/merged_all';
+label.campaigndir = '/ltedata/MASC/airlab/SampleImage/2DS/merged_21122017_rospla';
 
 % path to the directory to save processed matfiles (.mat)
-label.outputdir_mat = '../training_set/CPI_smooth0_icpca1';
+label.outputdir_mat = '/ltedata/MASC/airlab/training_set/2DS_rospla/mat';
 
 % path to the directory to save processed images (.png)
-label.outputdir_img = '../training_set/CPI_smooth0_icpca1';
+label.outputdir_img = '/ltedata/MASC/airlab/training_set/2DS_rospla/img';
 
 % imaging probe. Can be : 2DS / HVPS / CPI
-process.probe = 'CPI';
+process.probe = '2DS';
 
 % input format : 'image' (.png) or 'matfile' (.mat) (matfile supported only for 2DS probe
 process.input_img_type = 'image';
@@ -53,10 +53,11 @@ process.use_icpca = true; % use ICPCA code from Lindquvist et al.
 % some technical parameters used to identify background threshold in CPI images
 process.rm_white_boarders = false;
 process.white_thresh = 0.95;
-process.graythresh_multiplier_sup = 1.3;
-process.graythresh_multiplier_inf1 = 0.7;
-process.graythresh_multiplier_inf2 = 0.5;
-process.graythresh_multiplier_inf3 = 0.3;
+% 1.3 - 0.7 - 0.5 - 0.3 intially; try all 1 
+process.graythresh_multiplier_sup = 1;
+process.graythresh_multiplier_inf1 = 1;
+process.graythresh_multiplier_inf2 = 1;
+process.graythresh_multiplier_inf3 = 1;
 process.noise_threshold = 4.1; % 4.0-4.1 for adjusted img, 4.2 for raw img
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -69,9 +70,9 @@ if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
     process.discard_noisy_img = false;
 
 elseif strcmp(process.probe,'CPI')
-    process.icpca_default = 1; %default = false
-    process.smoothen_perim = 0; % default = true
-    process.discard_noisy_img = false;
+    process.icpca_default = false; %default = false
+    process.smoothen_perim = false; % default = true initially but no diff in perf and time consuming so disabled
+    process.discard_noisy_img = true;
     
 end
 

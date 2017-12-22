@@ -139,7 +139,7 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
             X(i,j) = get_struct_field(roi,'Sym','P10'); tmp_vec(end+1) = X(i,j); Xlab{j} = 'fft P10'; j=j+1; %59
             X(i,j) = get_struct_field(roi,'Sym','mean'); Xlab{j} = 'Sym mean'; j=j+1; %60
             X(i,j) = get_struct_field(roi,'Sym','std'); Xlab{j} = 'Sym std'; j=j+1; %61
-            X(i,j) = get_struct_field(roi,'Sym','std')/get_struct_field(roi,'Sym','mean'); Xlab{j} = 'Sym std/mean'; j=j+1; %962
+            X(i,j) = get_struct_field(roi,'Sym','std')/get_struct_field(roi,'Sym','mean'); Xlab{j} = 'Sym std/mean'; j=j+1; %62
             X(i,j) = get_struct_field(roi,'Sym','P6')/nanmax(tmp_vec); Xlab{j} = 'fft P6/Pmax'; j=j+1; %63
             [~,idx_max] = nanmax(tmp_vec); 
             X(i,j) = idx_max-1; Xlab{j} = 'fft P# max'; j=j+1; %64 <--- check why is there idx_max-1 here, why -1 ?

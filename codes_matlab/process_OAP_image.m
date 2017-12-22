@@ -137,6 +137,21 @@ function process_OAP_image(img_current, label, process)
         % at that point bw_mask should look like standard 2DS image
         DS.data = bw_mask;
         
+        % retrieve noise threshold
+        DS.noise_thresh_ini = graythresh(tmp_mat_corr);
+        DS.noise_thresh_idx = idx_alt;
+        if idx_alt == 1
+            DS.noise_thresh_eff = DS.noise_thresh_ini;
+        elseif idx_alt == 2
+            DS.noise_thresh_eff = DS.noise_thresh_ini * process.graythresh_multiplier_sup;
+        elseif idx_alt == 3
+            DS.noise_thresh_eff = DS.noise_thresh_ini * process.graythresh_multiplier_inf1;
+        elseif idx_alt == 4
+            DS.noise_thresh_eff = DS.noise_thresh_ini * process.graythresh_multiplier_inf2;
+        elseif idx_alt == 5
+            DS.noise_thresh_eff = DS.noise_thresh_ini * process.graythresh_multiplier_inf3;
+        end
+       
     end
 
     % roi detection (normally there is just one main area, maybe 1-2 leftover pixels)

@@ -1,12 +1,12 @@
 clearvars; close all;
 
 
-K=10; 
-N_it=20; 
+K=4; 
+N_it=1; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = '2DS';
+target = 'CPI';
 normalization_type = 'standardization';
 dynamic_feat_transfo = true; %<- this option is useless here as dynamic feature transformation is always enabled
 
@@ -19,7 +19,7 @@ label_version = '1.1';
 if strcmp(target,'2DS')
     parameters_method =  {0.00014384,0.1,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
 elseif strcmp(target,'CPI')
-    parameters_method = {0.0001,0,5000,0,5000};
+    parameters_method = {0.0001,0.1,5000,0,5000};
 elseif strcmp(target,'HVPS')
     parameters_method = {0.001,1,1000,0,10000};
 elseif strcmp(target,'riming')
@@ -34,9 +34,9 @@ end
 if strcmp(target,'2DS')
     dir_data = '../training_set/2DS_4000_smooth0_icpca1/mat';
 elseif strcmp(target,'HVPS')
-    dir_data = '/home/praz/Documents/Cloud_Probes/training_set/HVPS';
+    dir_data = '../training_set/HVPS';
 elseif strcmp(target,'CPI')
-    dir_data = '/home/praz/Documents/airlab/training_set/CPI12';
+    dir_data = '../training_set/CPI_smooth0_icpca0';
 end
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
@@ -68,7 +68,7 @@ feat_vec = [feat_vec];
 %feat_vec(end+1) = 69;
 
 % Load the training matrix X
-[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
+[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
 
 % Load the labels vector y
 y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
@@ -178,7 +178,7 @@ D = size(X,2);
 %% Algorithm training & testing
 
 % split between train and test
-setSeed(100);
+setSeed(50);
 idx_perm = randperm(N);
 Nk = floor(N/K);
 idxTe = idx_perm(1:Nk);

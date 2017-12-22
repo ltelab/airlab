@@ -1,13 +1,13 @@
-clear; close all;
+clearvars; close all;
 
 %% User parameters & initialisation
 % User parameters
 K=4; 
-N_it=10; 
+N_it=5; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
-target = 'CPI';
+target = '2DS';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
 random_CV = false;
@@ -16,7 +16,7 @@ disp_summary = true;
 
 % Path to training data
 if strcmp(target,'2DS') || strcmp(target,'svm')
-    dir_data = '../training_set/2DS_4000_smooth0_icpca1/mat';
+    dir_data = '../training_set/2DS_rospla/mat';
 elseif strcmp(target,'HVPS')
     dir_data = '../training_set/HVPS';
 elseif strcmp(target,'CPI')
@@ -39,13 +39,17 @@ if strcmp(target,'2DS')
 elseif strcmp(target,'HVPS')
     load('feat_opt/features_opt_4fold_20it_alpha0.001_lambda1_HVPS.mat');
 elseif strcmp(target,'CPI')
-    load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+    load('feat_opt/CPI/rand_4fold_10it_2964N_111D_trial1.mat');
 else
     fprintf('Error : target %s not reckognized ! \n',target);
 end
 n_desc = 15;
+
+% WARNING !!! small change below
 feat_vec = feat_mat(:,n_desc+1);
 feat_vec(feat_vec==0) = [];
+%feat_vec = feat_vec_current(1:n_desc);
+
 %feat_vec = [feat_vec; [99:111]'];
 % add ratio touching the boarder ?
 %icpca_feats = []';
@@ -59,7 +63,7 @@ if strcmp(target,'2DS')
 elseif strcmp(target,'HVPS')
     parameters_method = {0.001,1,10000,0,10000};
 elseif strcmp(target,'CPI')
-    parameters_method = {0.0001,0.1,5000,0,5000};
+    parameters_method = {4.8329e-4,0.1833,5000,0,5000}; % old educated guess {0.0001,0.1,5000,0,5000}; // fine tuning : {4.8329e-4,0.1833,5000,0,5000}
 elseif strcmp(target,'riming')
     parameters_method = {0.0001,0.01,1000,0,10000};
 elseif strcmp(target,'melting')
@@ -73,7 +77,7 @@ end
 %% Data loading
 
 % Load the training matrix X
-[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
+[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
 
 % Load the labels vector y
 y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
@@ -100,7 +104,7 @@ end
 
 % load categories names
 if strcmp(target,'2DS')
-    labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
+    labels = {'Agg','Col','Gra','Ros','Sph','Oth','Pla'};
 elseif strcmp(target,'HVPS')
     labels = {'Agg','Col','Gra','Ros','Sph'};
 elseif strcmp(target,'CPI')
@@ -184,7 +188,7 @@ if ~grid_search
     D = size(X,2);
     N_classes = length(unique(y));
     feat_vec_dummy = 1:1:size(X,2);
-    Cout = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random_CV,1,1,use_cost_weights,dynamic_feat_transfo,feat_vec_dummy);
+    Cout = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random_CV,1,1,use_cost_weights,dynamic_feat_transfo,feat_vec,labels);
     
 
 %% hyperparameters space grid search
@@ -200,7 +204,7 @@ else
     step_vec = logspace(-5,-3,20);
     lambda_vec = logspace(-2,1,20);
     alpha_vec = [0];
-    it_vec = [5000];
+    it_vec = [5000 10000];
     
     BER_Te = zeros(numel(step_vec),numel(lambda_vec));
     BER_Tr = zeros(numel(step_vec),numel(lambda_vec));

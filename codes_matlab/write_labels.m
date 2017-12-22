@@ -1,9 +1,9 @@
 % small script to assign labels to airborne probes particles
 clear; close all;
 
-dirname = '/home/praz/Documents/airlab/training_set/CPI_smooth1_icpca1';
+dirname = '/ltedata/MASC/airlab/training_set/2DS_rospla/mat';
 
-probe = 'CPI';
+probe = '2DS';
 save_results = true;
 
 file_list = dir(fullfile(dirname,'*.mat'));
@@ -37,10 +37,14 @@ for i=1:length(file_list)
             roi.label_ID = 6;
         case 'Pla'
             roi.label_name = 'Plate';
-            roi.label_ID = 6;
+            if strcmp(probe,'CPI')
+                roi.label_ID = 6;
+            elseif strcmp(probe,'2DS')
+                roi.label_ID = 7;
+            end
         otherwise
             roi.label_name = 'Unknown/Error';
-            roi.label_ID = 5;
+            roi.label_ID = -1;
             fprintf('Warning : unexpected name for file %s \n',file_list{i});
     end
     

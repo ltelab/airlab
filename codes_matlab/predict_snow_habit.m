@@ -128,9 +128,18 @@ function predict_snow_habit(dir_data,probe,save_results,save_validation_files,tr
                 end
                 fig = figure('Visible','off');
                 if isfield(roi,'data_gs') % CPI
-                    subplot(1,2,1); imshow(roi.raw_data); title(roi.label_name); set(gca,'fontsize',9);
+                    subplot(1,2,1); imshow(roi.raw_data); 
+                    if ~isfield(roi,'noise_thresh_ini')
+                        roi.noise_thresh_ini = 0;
+                        roi.noise_thresh_eff = 0;
+                        roi.mean_intens = 0;
+                    end  
+                    title(sprintf('%s, n_i=%1.2f, n_f=%1.2f, B=%1.2f',roi.label_name,roi.noise_thresh_ini,roi.noise_thresh_eff,roi.mean_intens)); set(gca,'fontsize',9);
                     [p_max,idx_max] = max(roi.label_probs);
-                    subplot(1,2,2); imshow(roi.data_gs); title(sprintf('ID_{max} : %u, p_{max}(%u) : %2.1f',idx_max,idx_max,p_max)); set(gca,'fontsize',9);
+                    if ~isfield(roi,'frame_fraction')
+                        roi.frame_fraction = 0;
+                    end
+                    subplot(1,2,2); imshow(roi.data_gs); title(sprintf('ID_{max}:%u, p_{max}(%u):%2.1f, frame frac=%1.2f',idx_max,idx_max,p_max,roi.frame_fraction)); set(gca,'fontsize',9);
   
                 else
                     [p_max,~] = max(roi.label_probs);

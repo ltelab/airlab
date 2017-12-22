@@ -1,4 +1,4 @@
-function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random,verbose,illustration,use_weights,apply_feat_transfo,feat_vec)
+function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,random,verbose,illustration,use_weights,apply_feat_transfo,feat_vec,labels)
 
     [N,D] = size(X);
     N_classes = length(unique(y));
@@ -222,14 +222,11 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
     [beta_weight,beta_id] = sort(beta_sum_vec,'descend');
     beta_weight = beta_weight./sum(beta_weight)*100;
 
+    %%
+    
     if illustration
-        
-        if strcmp(type_classif,'multiclass')
-            %labels = {'SP','CC','PC','AG','GR','CPC'};
-            labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
-        else
-            labels = {'dry','melting'};
-        end
+
+
         % confmat
         figure('units','pixels','Position',[100 100 762 638]);
         heatmap(global_confmat_Tr',labels,labels,1,'Colormap','red','ShowAllTicks',1,'UseLogColorMap',true,'Colorbar',true,'Fontsize',14);
@@ -250,6 +247,34 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
         set(gca,'Linewidth',1.5);
         set(gca,'XLim',[0 D+1]);
         %title('Feature Ranking');
+        
+        % error rate & prob of detection
+        box_all = [];
+        for c=1:N_classes
+            box_c = ER_Te(:,:,c);
+            box_c = box_c(:);
+            box_all = [box_all box_c];
+        end
+        red_c = [240 59 32]/255;
+        figure('units','pixels','Position',[100 100 600 500]); hold on; box on; grid on;
+        bh = boxplot(box_all,'symbol','','positions',1:1:N_classes,'widths',0.5,'colors','k');
+        % fill the boxes with color
+        h = findobj(gca,'Tag','Box');
+        for j=1:length(h)
+            patch(get(h(j),'XData'),get(h(j),'YData'),'r','FaceAlpha',.5);
+        end
+        % redraw the boxplot over it
+        bh = boxplot(box_all,'symbol','','positions',1:1:N_classes,'widths',0.5,'colors','k');
+        % thicken the outline of the boxplot
+        set(bh(:,:),'linewidth',1.5);
+        % set the color of the median line
+        set(bh(6,:),'linewidth',1.5,'Color',red_c);
+        axis([0.5 N_classes + 0.5 0 0.22]);
+        set(gca,'XTick',1:1:N_classes);
+        set(gca,'XTickLabel',labels);
+        ylabel('Error rate [-]');
+        set(gca,'Fontsize',14);
+        
         
         
         %% boxplots
@@ -346,6 +371,8 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
 
     end
     
+    %%
+    
     % output structure
     out.BER_Te = mean(BER_Te(:));
     out.BER_Tr = mean(BER_Tr(:));
@@ -365,5 +392,12 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
     out.beta_id = beta_id;
     out.beta_weight = beta_weight;
     out.ER_Te = ER_Te;
+    
+    % adding intra-class error rate and prob of detection
+    for c=1:N_classes
+        tmp_mat = ER_Te(:,:,c);
+        out.mean_ER_Te(1,c) = mean(tmp_mat(:));
+        out.std_ER_Te(1,c) = std(tmp_mat(:));  
+    end
     
 end
