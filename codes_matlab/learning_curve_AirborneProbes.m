@@ -1,8 +1,8 @@
-clearvars; close all;
+clearvars; 
 
 
 K=4; 
-N_it=1; 
+N_it=10; 
 method='logistic';
 type_classif='multiclass'; 
 use_cost_weights = true;
@@ -17,11 +17,11 @@ label_version = '1.1';
 
 
 if strcmp(target,'2DS')
-    parameters_method =  {0.00014384,0.1,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
+    parameters_method =  {0.0001,0.1,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda
 elseif strcmp(target,'CPI')
     parameters_method = {0.0001,0.1,5000,0,5000};
 elseif strcmp(target,'HVPS')
-    parameters_method = {0.001,1,1000,0,10000};
+    parameters_method = {0.001,1,5000,0,5000};
 elseif strcmp(target,'riming')
     parameters_method = {0.0001,0.01,1000,0,10000};
 elseif strcmp(target,'melting')
@@ -32,9 +32,9 @@ end
 
 % path to training data
 if strcmp(target,'2DS')
-    dir_data = '../training_set/2DS_4000_smooth0_icpca1/mat';
+    dir_data = '../training_set/2DS_rospla2_final';
 elseif strcmp(target,'HVPS')
-    dir_data = '../training_set/HVPS';
+    dir_data = '../training_set/HVPS_new3';
 elseif strcmp(target,'CPI')
     dir_data = '../training_set/CPI_smooth0_icpca0';
 end
@@ -49,11 +49,11 @@ t_str_stop  = '20180101000000';
 
 % chose feat_vec here
 if strcmp(target,'2DS')
-    load('feat_opt/2DS/rand_4fold_10it_3990N_98D.mat');
+    load('feat_opt/BER_based/2DS_4217s_10it_4k.mat');
 elseif strcmp(target,'HVPS')
-    load('feat_opt/features_opt_4fold_20it_alpha0.001_lambda1_HVPS.mat');
+    load('feat_opt/BER_based/HVPS_1426s_10it_4k.mat');
 elseif strcmp(target,'CPI')
-    load('feat_opt/CPI/rand_4fold_10it_more_samples.mat');
+    load('feat_opt/BER_based/CPI_2964s_10it_4k.mat');
 else
     fprintf('Error : target %s not reckognized ! \n',target);
 end
@@ -68,7 +68,7 @@ feat_vec = [feat_vec];
 %feat_vec(end+1) = 69;
 
 % Load the training matrix X
-[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
+[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
 
 % Load the labels vector y
 y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
@@ -92,9 +92,9 @@ end
 if strcmp(target,'2DS')
     labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
 elseif strcmp(target,'HVPS')
-    labels = {'Agg','Col','Gra','Ros','Sph'};
+    labels = {'AG','CC','CP','BR','QS'};
 elseif strcmp(target,'CPI')
-    labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+    labels = {'AG','CC','CP','BR','QS','PC'};
 end
 
 y = real(y);
@@ -179,19 +179,22 @@ D = size(X,2);
 
 % split between train and test
 setSeed(50);
-idx_perm = randperm(N);
-Nk = floor(N/K);
-idxTe = idx_perm(1:Nk);
-idxTr = idx_perm(Nk+1:end);
-yTe = y(idxTe);
-XTe_ini = X(idxTe,:);
-yTr_tot = y(idxTr);
-XTr_tot = X(idxTr,:);
-%train_sampling = [0.05 0.10 0.15 0.20 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95];
-train_sampling = [0.02:0.02:1];
-%[0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.10 0.15 0.20 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1];
 
 for i=1:N_it
+
+    idx_perm = randperm(N);
+    Nk = floor(N/K);
+    idxTe = idx_perm(1:Nk);
+    idxTr = idx_perm(Nk+1:end);
+    yTe = y(idxTe);
+    XTe_ini = X(idxTe,:);
+    yTr_tot = y(idxTr);
+    XTr_tot = X(idxTr,:);
+    %train_sampling = [0.05 0.10 0.15 0.20 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95];
+    train_sampling = [0.02:0.02:1];
+    %[0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.10 0.15 0.20 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1];
+
+
     
     fprintf('\n Iteration %u/%u : \n\n',i,N_it);
 

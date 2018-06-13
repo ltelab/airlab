@@ -3,52 +3,70 @@ clearvars; close all;
 %% User parameters & initialisation
 % User parameters
 K=4; 
-N_it=5; 
-method='logistic';
-type_classif='multiclass'; 
+N_it=10; 
+method='logistic'; 
 use_cost_weights = true;
-target = '2DS';
+target_type = 'subclassif'; % main | subclassif
+target = 'AG-BR_AG-O';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
 random_CV = false;
 grid_search = false;
 disp_summary = true;
 
+if strcmp(target_type,'main')
+    type_classif = 'multiclass'; 
+else
+    type_classif = 'binary';
+end
+
+
 % Path to training data
 if strcmp(target,'2DS') || strcmp(target,'svm')
-    dir_data = '../training_set/2DS_rospla/mat';
+    dir_data = '../training_set/2DS_rospla2_final';
 elseif strcmp(target,'HVPS')
-    dir_data = '../training_set/HVPS';
+    dir_data = '../training_set/HVPS_new3';
 elseif strcmp(target,'CPI')
     dir_data = '../training_set/CPI_smooth0_icpca0';
+elseif strcmp(target,'AG-BR_AG-O')
+    dir_data = '../training_set/subclassification/bulrosagg_vs_others/all';
 end
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
-data_picnames = dir(fullfile(dir_data,'*.png'));
-data_picnames = {data_picnames.name}';
+%data_picnames = dir(fullfile(dir_data,'*.png'));
+%data_picnames = {data_picnames.name}';
 
 % Time interval 
 t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
 % chose feat_vec here
-% best for 2-DS : features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat
-% best for CPI : feat_opt/CPI/rand_4fold_10it_more_samples.mat
-if strcmp(target,'2DS')
-    load('feat_opt/2DS/rand_4fold_10it_3990N_98D.mat');
-elseif strcmp(target,'HVPS')
-    load('feat_opt/features_opt_4fold_20it_alpha0.001_lambda1_HVPS.mat');
-elseif strcmp(target,'CPI')
-    load('feat_opt/CPI/rand_4fold_10it_2964N_111D_trial1.mat');
-else
-    fprintf('Error : target %s not reckognized ! \n',target);
-end
-n_desc = 15;
+if strcmp(target_type,'main')
+    if strcmp(target,'2DS')
+        load('feat_opt/BER_based/2DS_4217s_10it_4k.mat');
+    elseif strcmp(target,'HVPS')
+        load('feat_opt/BER_based/HVPS_1426s_10it_4k.mat');
+    elseif strcmp(target,'CPI')
+        load('feat_opt/BER_based/CPI_2964s_10it_4k.mat');
+    else
+        fprintf('Error : target %s not reckognized ! \n',target);
+    end
+    
+    n_desc = 15;
+    feat_vec = feat_mat(:,n_desc+1);
+    feat_vec(feat_vec==0) = [];
+      
+elseif strcmp(target_type,'subclassif')
 
-% WARNING !!! small change below
-feat_vec = feat_mat(:,n_desc+1);
-feat_vec(feat_vec==0) = [];
-%feat_vec = feat_vec_current(1:n_desc);
+    n_desc = 2;
+    if strcmp(target,'AG-BR_AG-O')
+        feat_vec = [83 33];
+    else
+        fprintf('Error : target %s not reckognized ! \n',target);
+    end
+    
+end
+
 
 %feat_vec = [feat_vec; [99:111]'];
 % add ratio touching the boarder ?
@@ -58,18 +76,20 @@ feat_vec(feat_vec==0) = [];
 %feat_vec(end+1) = 69;
 
 % hyperparameters for ML method
-if strcmp(target,'2DS')
-    parameters_method =  {0.00014384,0.38,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda // after grid search with 20 features : {0.00016681,0.22,5000,0,5000} // fine tuning : {0.00014384,0.38,5000,0,5000}
+if strcmp(method,'svm')
+    parameters_method = {100,0.01,'rbf'}; % 100 / 0.01 for 17 desc || 1 0.01 for all
+elseif strcmp(target,'2DS')
+    parameters_method =  {0.0001,0.1,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda // after grid search with 20 features : {0.00016681,0.22,5000,0,5000} // fine tuning : {0.00014384,0.38,5000,0,5000}
 elseif strcmp(target,'HVPS')
-    parameters_method = {0.001,1,10000,0,10000};
+    parameters_method = {0.001,1,5000,0,5000};
 elseif strcmp(target,'CPI')
-    parameters_method = {4.8329e-4,0.1833,5000,0,5000}; % old educated guess {0.0001,0.1,5000,0,5000}; // fine tuning : {4.8329e-4,0.1833,5000,0,5000}
+    parameters_method = {0.0001,0.1,5000,0,5000}; % old educated guess {0.0001,0.1,5000,0,5000}; // fine tuning : {4.8329e-4,0.1833,5000,0,5000}
 elseif strcmp(target,'riming')
     parameters_method = {0.0001,0.01,1000,0,10000};
 elseif strcmp(target,'melting')
     parameters_method = {0.001,0.01,1000,0,10000};
-elseif strcmp(target,'svm')
-    parameters_method = {100,0.01,'rbf'}; % 100 / 0.01 for 17 desc || 1 0.01 for all
+elseif strcmp(target,'AG-BR_AG-O')  
+    parameters_method = {0.0001,0.1,5000,0,5000};
 end
 
 
@@ -78,9 +98,14 @@ end
 
 % Load the training matrix X
 [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
+X_ini = X;
 
 % Load the labels vector y
-y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
+if strcmp(target_type,'main')
+    y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
+elseif strcmp(target_type,'subclassif')
+    [~,y] = load_2DS_labels(dir_data,t_str_start,t_str_stop,1);
+end
 
 % remove NaN-values in X,y
 idx = find(isnan(sum(X,2)));
@@ -92,23 +117,25 @@ y(idx) = [];
 % X(idx,:) = [];
 % y(idx) = [];
 
-% remove unknown labels
-idx_unknown = find(y<=0);
+% remove unwanted labels
+idx_unknown = find(y<0 | y>7);
 if ~isempty(idx_unknown)
     y(idx_unknown) = [];
     X(idx_unknown,:) = [];
-    data_picnames(idx_unknown) = [];
+    %data_picnames(idx_unknown) = [];
     data_filenames(idx_unknown) = [];
     fprintf('%u samples discarded because not labelled correctly \n',length(idx_unknown));
 end
 
 % load categories names
 if strcmp(target,'2DS')
-    labels = {'Agg','Col','Gra','Ros','Sph','Oth','Pla'};
+    labels = {'AG','CC','CP','BR','QS','OT','PC'};
 elseif strcmp(target,'HVPS')
-    labels = {'Agg','Col','Gra','Ros','Sph'};
+    labels = {'AG','CC','CP','BR','QS'};
 elseif strcmp(target,'CPI')
-    labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+    labels = {'AG','CC','CP','BR','QS','PC'};
+elseif strcmp(target,'AG-BR_AG-O')
+    labels = {'AG-BR','AG-O'};
 end
 
 % summary
@@ -135,19 +162,16 @@ for i=1:D
     classif_params.skew(i,1) = skew;
     
     if skew > 1
-        
+        fprintf('Feat %u, skewness = %2.2f \n',i,skew)
         X(:,i) = log(abs(X(:,i)+1)); 
         
     elseif skew > 0.75
-        
         X(:,i) = sqrt(abs(X(:,i)));
         
     elseif skew < -1
-        
         X(:,i) = exp(X(:,i));
         
     elseif skew < -0.75
-        
         X(:,i) = X(:,i).^2;
         
     end
@@ -180,6 +204,21 @@ for i=1:D
 end
 
 end
+
+%% visual illustration of norm + Gauss
+if 1
+    disp_feat = 2;
+    figure; subplot(121); hold on; box on;
+    histogram(X_ini(:,disp_feat),20,'Normalization','count','facecolor',[0.3 0.3 0.3]);
+    xlabel('Before');
+    ylabel('Count');
+    title('Feature #14');
+    subplot(122); hold on; box on;
+    histogram(X(:,disp_feat),20,'Normalization','count','facecolor',[0.3 0.3 0.3]);
+    xlabel('After');
+    
+end
+
 
 %% Classification 
 if ~grid_search

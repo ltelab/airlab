@@ -795,6 +795,20 @@ cmap = [r g g];
 end
 
 
+% Generate Blue-White color map
+function cmap = blue(levels)
+b = ones(levels,1);
+g = linspace(1, 0.1 , levels)';
+cmap = [g g b];
+end
+
+% Generate Green-White color map
+function cmap = green(levels)
+gr = ones(levels,1);
+g = linspace(1, 0, levels)';
+cmap = [g gr g];
+end
+
 
 
 

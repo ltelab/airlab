@@ -1,9 +1,9 @@
 % small script to assign labels to airborne probes particles
 clear; close all;
 
-dirname = '/ltedata/MASC/airlab/training_set/2DS_rospla/mat';
+dirname = '/ltedata/MASC/OAP/airlab/training_set/subclassification/bulrosagg_vs_others/all';
 
-probe = '2DS';
+probe = 'CPI';
 save_results = true;
 
 file_list = dir(fullfile(dirname,'*.mat'));
@@ -13,8 +13,8 @@ file_list = fullfile(dirname,file_only_list);
 for i=1:length(file_list)
     
     load(file_list{i});
-    
-    prefix = roi.name(1:3);
+    prefix = file_only_list{i}(1:3);
+    %prefix = roi.name(1:3);
     
     switch(prefix)
         case 'Agg'
@@ -42,6 +42,17 @@ for i=1:length(file_list)
             elseif strcmp(probe,'2DS')
                 roi.label_ID = 7;
             end
+        % subclassification training set
+        case 'BR_'
+            roi.label_name = 'Aggregate';
+            roi.label_ID = 1;            
+            roi.label_name2 = 'Aggregate of bullet rosettes';
+            roi.label_ID2 = 0;
+        case 'O_A'
+            roi.label_name = 'Aggregate';
+            roi.label_ID = 1;
+            roi.label_name2 = 'Other aggregate';
+            roi.label_ID2 = 1;   
         otherwise
             roi.label_name = 'Unknown/Error';
             roi.label_ID = -1;

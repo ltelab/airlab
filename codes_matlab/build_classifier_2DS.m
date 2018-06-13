@@ -8,22 +8,26 @@ clearvars ; close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 method='logistic';
-type_classif='multiclass'; 
 use_cost_weights = true;
-target = 'CPI';
+target_type = 'subclassif'; 
+target = 'AG-BR_AG-O';
 normalization_type = 'standardization';
 dynamic_feat_transfo = false;
-parameters_method = {4.8329e-4,0.1833,5000,0,5000};  %{0.0001,0.1,5000,0,5000}; %{0.0001,0.1,5000,0,5000};
 
 features_ranking = true;
 display_confmat = true;
 label_version = '1.1';
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if strcmp(target_type,'main')
+    type_classif = 'multiclass'; 
+else
+    type_classif = 'binary';
+end
+
 % path to training data
-dir_data = '/home/praz/Documents/airlab/training_set/CPI_smooth0_icpca0';
+dir_data = '../training_set/subclassification/bulrosagg_vs_others/all';
 
 data_filenames = dir(fullfile(dir_data,'*.mat'));
 data_filenames = {data_filenames.name}';
@@ -34,18 +38,50 @@ data_picnames = {data_picnames.name}';
 t_str_start = '20150101000000';
 t_str_stop  = '20180101000000';
 
-% chose feat_vec here
-if strcmp(target,'2DS')
-    load('feat_opt/features_opt_4fold_10it rnd_alpha0.0001_lambda0.01_i0.75_it5000_2DS_3500samples_97feats.mat');
+% choose parameters_method
+if strcmp(method,'svm')
+    parameters_method = {100,0.01,'rbf'}; % 100 / 0.01 for 17 desc || 1 0.01 for all
+elseif strcmp(target,'2DS')
+    parameters_method =  {0.0001,0.1,5000,0,5000}; % 0.0001 or 0.001 for stepsize / 1 or 0.1 for lambda // after grid search with 20 features : {0.00016681,0.22,5000,0,5000} // fine tuning : {0.00014384,0.38,5000,0,5000}
+elseif strcmp(target,'HVPS')
+    parameters_method = {0.001,1,5000,0,5000};
 elseif strcmp(target,'CPI')
-    load('feat_opt/CPI/rand_4fold_10it_2964N_111D_trial1.mat');
+    parameters_method = {0.0001,0.1,5000,0,5000}; % old educated guess {0.0001,0.1,5000,0,5000}; // fine tuning : {4.8329e-4,0.1833,5000,0,5000}
+elseif strcmp(target,'riming')
+    parameters_method = {0.0001,0.01,1000,0,10000};
+elseif strcmp(target,'melting')
+    parameters_method = {0.001,0.01,1000,0,10000};
+elseif strcmp(target,'AG-BR_AG-O')  
+    parameters_method = {0.0001,0.1,5000,0,5000};
 end
 
-n_desc = 15;
-feat_vec = feat_mat(:,n_desc+1);
-feat_vec(feat_vec==0) = [];
-feat_vec = [feat_vec];
-%feat_vec(end+1) = 67;
+
+% chose feat_vec here
+if strcmp(target_type,'main')
+    if strcmp(target,'2DS')
+        load('feat_opt/BER_based/2DS_4217s_10it_4k.mat');
+    elseif strcmp(target,'HVPS')
+        load('feat_opt/BER_based/HVPS_1426s_10it_4k.mat');
+    elseif strcmp(target,'CPI')
+        load('feat_opt/BER_based/CPI_2964s_10it_4k.mat');
+    else
+        fprintf('Error : target %s not reckognized ! \n',target);
+    end
+    
+    n_desc = 15;
+    feat_vec = feat_mat(:,n_desc+1);
+    feat_vec(feat_vec==0) = [];
+      
+elseif strcmp(target_type,'subclassif')
+
+    n_desc = 2;
+    if strcmp(target,'AG-BR_AG-O')
+        feat_vec = [83 33];
+    else
+        fprintf('Error : target %s not reckognized ! \n',target);
+    end
+    
+end
 
 %% Data loading
 
@@ -53,7 +89,11 @@ feat_vec = [feat_vec];
 [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop,feat_vec);
 
 % Load the labels vector y
-y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
+if strcmp(target_type,'main')
+    y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
+elseif strcmp(target_type,'subclassif')
+    [~,y] = load_2DS_labels(dir_data,t_str_start,t_str_stop,1);
+end
 
 % remove NaN-values in X,y
 idx = find(isnan(sum(X,2)));
@@ -61,7 +101,7 @@ X(idx,:) = [];
 y(idx) = [];
 
 % remove unknown labels
-idx_unknown = find(y<=0);
+idx_unknown = find(y<0);
 if ~isempty(idx_unknown)
     y(idx_unknown) = [];
     X(idx_unknown,:) = [];
@@ -72,11 +112,13 @@ end
 
 % load categories names
 if strcmp(target,'2DS')
-    labels = {'Agg','Col','Gra','Ros','Sph','Oth'};
+    labels = {'AG','CC','CP','BR','QS','OT','PC'};
 elseif strcmp(target,'HVPS')
-    labels = {'Agg','Col','Gra','Ros','Sph'};
+    labels = {'AG','CC','CP','BR','QS'};
 elseif strcmp(target,'CPI')
-    labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+    labels = {'AG','CC','CP','BR','QS','PC'};
+elseif strcmp(target,'AG-BR_AG-O')
+    labels = {'AG-BR','AG-O'};
 end
 
 N = size(X,1);

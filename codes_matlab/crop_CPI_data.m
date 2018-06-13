@@ -1,19 +1,24 @@
 % crop_CPI
-clear all; close all;
+clearvars; close all;
 
-datadir = '/home/praz/Documents/CPI_data/20151201';
-outdir = '/home/praz/Documents/CPI_data/20151201_cropped';
+datadir = '/ltedata/MASC/OAP/OAP_flight_data/20151201_WF/CPI/raw/';
+outdir = '/ltedata/MASC/OAP/OAP_flight_data/20151201_WF/CPI/all_cropped/';
+
+create_sub_folders = false;
 
 all = dir(fullfile(datadir,'**','*.png'));
 all_name = {all.name}';
 all_folder = {all.folder}';
 
+if create_sub_folders
+    
+    count = 1;
+    part = 1;
+    subdir = sprintf('part%u',part);
+    if ~exist(fullfile(outdir,subdir),'dir')
+        mkdir(fullfile(outdir,subdir));
+    end
 
-count = 1;
-part = 1;
-subdir = sprintf('part%u',part);
-if ~exist(fullfile(outdir,subdir),'dir')
-    mkdir(fullfile(outdir,subdir));
 end
 
 for k = 1:numel(all_name)
@@ -57,15 +62,19 @@ for k = 1:numel(all_name)
         %sub_roi = uint8(sub_roi.*255);
         %figure; imshow(sub_roi,map);
         %RGB = ind2rgb(sub_roi.*255,map);
-        if mod(count,5000) == 0
-            part = part + 1;
-            subdir = sprintf('part%u',part);
-            if ~exist(fullfile(outdir,subdir),'dir')
-                mkdir(fullfile(outdir,subdir));
+        if create_sub_folders
+            if mod(count,5000) == 0
+                part = part + 1;
+                subdir = sprintf('part%u',part);
+                if ~exist(fullfile(outdir,subdir),'dir')
+                    mkdir(fullfile(outdir,subdir));
+                end
             end
+            imwrite(sub_roi,map,fullfile(outdir,subdir,sprintf('part%u_%s',i,all_name{k})));
+            count = count + 1;
+        else
+            imwrite(sub_roi,map,fullfile(outdir,sprintf('part%u_%s',i,all_name{k})));
         end
-        imwrite(sub_roi,map,fullfile(outdir,subdir,sprintf('part%u_%s',i,all_name{k})));
-        count = count + 1;
         %sub_roi = im(ROI(i).PixelIdxList);
         %figure;imshow(RGB,map);    
 

@@ -228,24 +228,28 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
 
 
         % confmat
-        figure('units','pixels','Position',[100 100 762 638]);
+        F1 = figure('units','pixels','Position',[100 100 762 638]);
         heatmap(global_confmat_Tr',labels,labels,1,'Colormap','red','ShowAllTicks',1,'UseLogColorMap',true,'Colorbar',true,'Fontsize',14);
         set(gca,'Fontsize',14);
         title('Train confusion matrix');
-        figure('units','pixels','Position',[100 100 762 638]);
+        F2 = figure('units','pixels','Position',[100 100 762 638]);
         heatmap(global_confmat_Te',labels,labels,1,'Colormap','red','ShowAllTicks',1,'UseLogColorMap',true,'Colorbar',true,'Fontsize',14);
         set(gca,'Fontsize',14);
         title('Test confusion matrix');
+        
+        drawnow;
 
         % beta weight
-        figure('units','pixels','Position',[100 100 1015 544]); hold on; box on;
-        bar(beta_weight);
-        set(gca,'xtick',1:D,'xticklabel',int2str(feat_vec(beta_id)));
-        xlabel('Feature ID');
-        ylabel('Feature importance [%]');
-        set(gca,'Fontsize',14);
-        set(gca,'Linewidth',1.5);
-        set(gca,'XLim',[0 D+1]);
+        if 0
+            figure('units','pixels','Position',[100 100 1015 544]); hold on; box on;
+            bar(beta_weight);
+            set(gca,'xtick',1:D,'xticklabel',int2str(feat_vec(beta_id)));
+            xlabel('Feature ID');
+            ylabel('Feature importance [%]');
+            set(gca,'Fontsize',14);
+            set(gca,'Linewidth',1.5);
+            set(gca,'XLim',[0 D+1]);
+        end
         %title('Feature Ranking');
         
         % error rate & prob of detection
@@ -256,8 +260,10 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
             box_all = [box_all box_c];
         end
         red_c = [240 59 32]/255;
-        figure('units','pixels','Position',[100 100 600 500]); hold on; box on; grid on;
-        bh = boxplot(box_all,'symbol','','positions',1:1:N_classes,'widths',0.5,'colors','k');
+        blue_c = [59 32 240]/255;
+        green_c = [32 240 59]/255;
+        F3 = figure('units','pixels','Position',[100 100 762 638]); hold on; box on; grid on;
+        boxplot(box_all,'symbol','','positions',1:1:N_classes,'widths',0.5,'colors','k');
         % fill the boxes with color
         h = findobj(gca,'Tag','Box');
         for j=1:length(h)
@@ -269,9 +275,10 @@ function out = CrossValidation(method,type_classif,parameters_method,K,N_it,X,y,
         set(bh(:,:),'linewidth',1.5);
         % set the color of the median line
         set(bh(6,:),'linewidth',1.5,'Color',red_c);
-        axis([0.5 N_classes + 0.5 0 0.22]);
+        axis([0.5 N_classes + 0.5 0 0.6]);
         set(gca,'XTick',1:1:N_classes);
         set(gca,'XTickLabel',labels);
+        set(gca,'Ylim',[0 0.2]);
         ylabel('Error rate [-]');
         set(gca,'Fontsize',14);
         

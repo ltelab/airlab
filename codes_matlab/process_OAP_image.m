@@ -1,4 +1,4 @@
-function process_OAP_image(img_current, label, process)
+function process_OAP_image(img_current, img_path, label, process)
 
     % filename
     DS.name = img_current(1:end-4);
@@ -9,14 +9,14 @@ function process_OAP_image(img_current, label, process)
     if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
         
         if strcmp(process.input_img_type,'image')
-            tmp_mat = imread(fullfile(label.campaigndir,img_current)); % grayscale or truecolor
+            tmp_mat = imread(fullfile(img_path,img_current)); % grayscale or truecolor
             DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
             DS.data(tmp_mat(:,:,1)==0) = true; 
             DS.raw_data = DS.data;
             [DS.h_ini,DS.w_ini] = size(DS.raw_data);
         
         elseif strcmp(process.input_img_type,'matfile')
-            tmp_mat = load(fullfile(label.campaigndir,img_current));
+            tmp_mat = load(fullfile(img_path,img_current));
             tmp_mat = tmp_mat.particle_mask;
             DS.data = false(size(tmp_mat,1),size(tmp_mat,2));
             DS.data(~tmp_mat) = true;
@@ -27,18 +27,18 @@ function process_OAP_image(img_current, label, process)
     
     % CPI probe requires a little bit more of processing as images are true colors and generally contain noise
     elseif strcmp(process.probe,'CPI')
-        info = imfinfo(fullfile(label.campaigndir,img_current));
+        info = imfinfo(fullfile(img_path,img_current));
 
         switch info.ColorType
             case 'grayscale'
-                img_ini = im2double(imread(fullfile(label.campaigndir,img_current)));
+                img_ini = im2double(imread(fullfile(img_path,img_current)));
                 tmp_mat = img_ini;
             case 'truecolor'
-                img_ini = imread(fullfile(label.campaigndir,img_current));
+                img_ini = imread(fullfile(img_path,img_current));
                 tmp_mat = rgb2gray(im2double(img_ini));
                 [img_ini, map] = rgb2ind(img_ini,256);
             case 'indexed'
-                [img_ini, map] = imread(fullfile(label.campaigndir,img_current));
+                [img_ini, map] = imread(fullfile(img_path,img_current));
                 tmp_mat = im2double(ind2gray(img_ini, map));
             otherwise
                 error('invalid image type')
@@ -59,7 +59,13 @@ function process_OAP_image(img_current, label, process)
         end
     
         % image adjusted to better identify background noise (and detect noisy img, if desired)
-        tmp_mat_corr = imadjust(tmp_mat);
+        try
+            tmp_mat_corr = imadjust(tmp_mat);
+        catch
+            tmp_mat_corr = tmp_mat;
+            fprintf('Warning : imadjust (line 63) to detect noisy images failed...\n');
+            fprintf('The image is : %s\n',img_current);
+        end
         
         % for CPI only : detect "pure noise" images and discard them
         if process.discard_noisy_img
@@ -169,6 +175,7 @@ function process_OAP_image(img_current, label, process)
          fprintf('Largest ROI found is smaller than %u pixels, particle classified as Small Particle (SP). \n',process.min_area_for_convex_hull);
          %n_skipped = n_skipped + 1;
          DS.is2small = true;
+         DS.area = max1;
          DS.status = 'too small';
          if process.save_mat
             if ~exist(label.outputdir_mat,'dir')
@@ -470,7 +477,7 @@ function process_OAP_image(img_current, label, process)
             
         else
         
-        icpca.filePath = fullfile(label.campaigndir,strcat(DS.name,DS.ext));
+        icpca.filePath = fullfile(img_path,strcat(DS.name,DS.ext));
         icpca.outputDir = '/home/praz/Documents/IC-PCA/figs/CPI';
         icpca.plots = false;
         icpca.debug = false;

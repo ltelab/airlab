@@ -1,17 +1,22 @@
+clearvars;
 tic;
 % CP : I stopped the processing at 1315
 % imageFile='D:\gpm\2DSimage\2DS.20151201_1.V.cdf';
-imageFile='/media/praz/Samoylov/Cloud_Probes/flight_20151201_whole_dataset/NetCDF/2DS.20151201_1.V.cdf';
+imageFile='/ltedata/MASC/OAP/OAP_flight_data/20151112_WF/HVPS/HVPS.20151112.V.cdf';
 hour=ncread(imageFile,'hour');
 minute=ncread(imageFile,'minute');
 second=ncread(imageFile,'second');
 % saveDir='D:\gpm\HabitClassification\case\20151202_0039-0054\Alexis classification scheme\2DS\inputDir\';
-saveDir='/media/praz/Samoylov/Cloud_Probes/flight_20151201_whole_dataset/test_2ds_code/';
+saveDir='/ltedata/MASC/OAP/OAP_flight_data/20151112_WF/HVPS/19h19-19h31/';
 %saveDir='/data/mcfarq/a/saisai/GPM/HabitClassification/case/20151201_230300-230359/2DS/inputDir/';
 %%
-startTime='000000';%hh:mm:ss
-endTime='235959';
-process_all = true;
+startTime='191900';%hh:mm:ss
+endTime='193100';
+process_all = false;
+
+if ~exist(saveDir,'dir')
+    mkdir(saveDir);
+end
 
 start_hh=str2double(startTime(1:2));
 start_mm=str2double(startTime(3:4));
@@ -28,9 +33,11 @@ if process_all
     endFrame = numel(hour);
 end
 
-for i=39500:39510%endFrame % <--- I stopped at 39'500 last time... should be enough :)
+parfor i=startFrame:endFrame % <--- I stopped at 39'500 last time... should be enough :)
     image_buffer(imageFile,saveDir,i);
     fprintf('%u / %u \n',i,endFrame-startFrame+1)
 end
 
-toc;
+finished = toc;
+display(finished);
+

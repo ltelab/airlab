@@ -3,7 +3,11 @@
 %'/media/praz/Masc-Data/APRES3_2015/PROCESSED_20160119/DATA/GOOD';
 
 
-function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_stop,feat_vec)
+function [X,Xlab,Xname,Xt,Xfullprob] = load_processed_2DS_data(dirname,t_str_start,t_str_stop,feat_vec)
+
+    if nargin < 4
+        load_fullprob = 0;
+    end
 
     fprintf('Load processed data...');
 
@@ -27,6 +31,7 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
     Xlab = {};
     Xname = {};
     Xt = [];
+    Xfullprob = [];
     
     i = 1;
     for k=1:length(file_list)
@@ -142,7 +147,7 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
             X(i,j) = get_struct_field(roi,'Sym','std')/get_struct_field(roi,'Sym','mean'); Xlab{j} = 'Sym std/mean'; j=j+1; %62
             X(i,j) = get_struct_field(roi,'Sym','P6')/nanmax(tmp_vec); Xlab{j} = 'fft P6/Pmax'; j=j+1; %63
             [~,idx_max] = nanmax(tmp_vec); 
-            X(i,j) = idx_max-1; Xlab{j} = 'fft P# max'; j=j+1; %64 <--- check why is there idx_max-1 here, why -1 ?
+            X(i,j) = idx_max; Xlab{j} = 'fft P# max'; j=j+1; %64 
             
             % new descriptor based on truncated ellipse fitted (useful to detect truncated Spheres)
             X(i,j) = get_struct_field(roi,'E2','fit_OA'); Xlab{j} = 'truncated ellipse fitted OA'; j=j+1; %65
@@ -174,7 +179,7 @@ function [X,Xlab,Xname,Xt] = load_processed_2DS_data(dirname,t_str_start,t_str_s
             end
             jana_kov = get_struct_field(roi,'icpca','b','jana_kov');
             if ~isnan(jana_kov)
-                X(i,j) = jana_kov(1); Xlab{j} = 'jana_kov1'; j=j+1; %83
+                X(i,j) = jana_kov(1); Xlab{j} = 'jana_kov1'; j=j+1; %83 <- cov(s(30,0))
                 X(i,j) = jana_kov(2); Xlab{j} = 'jana_kov2'; j=j+1; %84
                 X(i,j) = jana_kov(3); Xlab{j} = 'jana_kov3'; j=j+1; %85
                 X(i,j) = jana_kov(4); Xlab{j} = 'jana_kov4'; j=j+1; %86

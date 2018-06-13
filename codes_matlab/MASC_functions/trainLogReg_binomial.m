@@ -61,7 +61,7 @@ function [beta,converged] = trainLogReg_binomial(y,X,alpha,lambda,batchSize,mome
         
             if abs(L-L_old) < tol % Check for convergence
                 converged = 1;
-                fprintf('convergence threshold has been reached after %u iterations ! \n',k);
+                %fprintf('convergence threshold has been reached after %u iterations ! \n',k);
                 break;
             end
 

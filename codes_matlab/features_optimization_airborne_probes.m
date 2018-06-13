@@ -2,13 +2,7 @@
 clear; close all;
 
 classif_subject = 'geometry';
-
-% load data
-dir_data = '../training_set//CPI_smooth0_icpca0';
-data_filenames = dir(fullfile(dir_data,'*.mat'));
-data_filenames = {data_filenames.name}';
-data_picnames = dir(fullfile(dir_data,'*.png'));
-data_picnames = {data_picnames.name}';
+subclassif_mode = true;
 
 % time interval to take into consideration
 t_str_start = '20150101000000';
@@ -27,15 +21,48 @@ feat_vec = [1:1:111]';
 
 dim_stop = 40;
 
-% load the training matrix X
-[X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
-%feat_vec(101) = [];
-%feat_vec([2 6 7 14 15 17 18 26 33 34 37 38 39 41:48 51 53 70 77 79 80 92]) = [];
-dim_ini = length(feat_vec);
-disp(dim_ini);
+labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
+parameters_method =  {0.0001,0.1,5000,0,5000}; %{0.001,1,10000,0,10000};
+%parameters_method = {100,0.01,'rbf'};
+% HVPS : {0.001,1,5000,0,5000}
+% 2DS : {0.0001,0.1,5000,0,5000}
+% CPI : {0.0001,0.1,5000,0,5000}
 
-% Load the labels vector y
-y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
+if subclassif_mode
+    
+    logit_type = 'binary';
+    
+    % some commands
+    dir_A = '../training_set/subclassification/bulrosagg_vs_others/bulrosagg';
+    dir_B = '../training_set/subclassification/bulrosagg_vs_others/otheragg';
+    
+    [X_A,Xlab_A,Xname_A,Xt_A] = load_processed_2DS_data(dir_A,t_str_start,t_str_stop);
+    [X_B,Xlab_B,Xname_B,Xt_B] = load_processed_2DS_data(dir_B,t_str_start,t_str_stop);
+    
+    y_A = zeros(numel(Xname_A),1);
+    y_B = ones(numel(Xname_B),1);
+    
+    X = [X_A; X_B];
+    y = [y_A; y_B];
+    
+else
+
+    logit_type = 'multiclass';
+    
+    % load data
+    dir_data = '../training_set/CPI_smooth0_icpca0';
+    data_filenames = dir(fullfile(dir_data,'*.mat'));
+    data_filenames = {data_filenames.name}';
+
+    % load the training matrix X
+    [X,Xlab,Xname,Xt] = load_processed_2DS_data(dir_data,t_str_start,t_str_stop);
+
+    % Load the labels vector y
+    y = load_2DS_labels(dir_data,t_str_start,t_str_stop);
+
+end
+
+%%
 
 % remove NaN-values in X,y
 idx = find(isnan(sum(X,2)));
@@ -43,18 +70,19 @@ X(idx,:) = [];
 y(idx) = [];
 
 % remove unknown labels
-idx_unknown = find(y<=0);
+if subclassif_mode
+    idx_unknown = find(y<0);
+else
+    idx_unknown = find(y<=0);
+end
+
 if ~isempty(idx_unknown)
     y(idx_unknown) = [];
     X(idx_unknown,:) = [];
-    data_picnames(idx_unknown) = [];
-    data_filenames(idx_unknown) = [];
+    %data_picnames(idx_unknown) = [];
+    %data_filenames(idx_unknown) = [];
     fprintf('%u samples discarded because not labelled correctly \n',length(idx_unknown));
 end
-
-labels = {'Agg','Col','Gra','Ros','Sph','Pla'};
-parameters_method =  {0.0001,0.1,5000,0,5000}; %{0.001,1,10000,0,10000};
-%parameters_method = {100,0.01,'rbf'};
 
 %% Features transformation
 
@@ -108,7 +136,7 @@ for i=1:D
     
 end
 
-%% forward selection based on best kappa/RMSE
+%% forward selection based on best kappa/RMSE/BER_Te
 if 1
     k=0;
     mean_BER_Te = [];
@@ -149,7 +177,7 @@ if 1
             % best params for riming, tol = 10 {0.0001,0.01,1000,0,10000};
             % best params for melting, tol = 0.1 {{0.001,1,1000,0,10000}
             %out = CrossValidation('logistic','multiclass',parameters_method,4,3,Xtest,y,0,0,0,1,0,feat_vec_test);
-            out = CrossValidation('logistic','multiclass',parameters_method,CV_k,CV_it,Xtest,y,random,verbose,illustration,use_weights,apply_feat_transfo,feat_vec_test);
+            out = CrossValidation('logistic',logit_type,parameters_method,CV_k,CV_it,Xtest,y,random,verbose,illustration,use_weights,apply_feat_transfo,feat_vec_test);
             kappa_test(i) = out.kappa_Te;
             kappa_train(i) = out.kappa_Tr;
             BER_test(i) = out.BER_Te;
@@ -167,7 +195,8 @@ if 1
         
         if strcmp(classif_subject,'geometry')
         
-            [val,idx] = max(kappa_test);% max(kappa_test);
+            [val,idx] = min(BER_test);% max(kappa_test);
+            val2 = kappa_test(idx);
             feat_vec_current = [feat_vec_current; feat_vec_pool(idx)];
             feat_vec_pool(idx) = [];
             mean_BER_Te(end+1) = BER_test(idx);
@@ -178,9 +207,9 @@ if 1
             mean_softOA_Te(end+1) = softOA_test(idx);
             mean_OA_Te(end+1) = OA_test(idx);
             mean_OA_Tr(end+1) = OA_train(idx);
-            fprintf('Done! Feature %u was added. New HSS : %2.2f%%\n',feat_vec_current(end),val*100);
+            fprintf('Done! Feature %u was added. New HSS : %2.2f%% ||| New BER : %2.2f%% \n',feat_vec_current(end),val2*100,val*100);
         
-        elseif strcmp(classif_subject,'riming');
+        elseif strcmp(classif_subject,'riming')
             
             [val,idx] = min(RMSE_test);
             feat_vec_current = [feat_vec_current; feat_vec_pool(idx)];
@@ -192,7 +221,7 @@ if 1
             mean_OA_Te(end+1) = OA_test(idx);
             fprintf('Done. Feature %u was added. New RMSE : %2.2f\n',feat_vec_current(end),val);
             
-        elseif strcmp(classif_subject,'melting');
+        elseif strcmp(classif_subject,'melting')
             
             [val,idx] = max(kappa_test);
             feat_vec_current = [feat_vec_current; feat_vec_pool(idx)];

@@ -18,16 +18,16 @@ tic;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% USER PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % path to the raw images
-label.campaigndir = '/ltedata/MASC/airlab/SampleImage/2DS/merged_21122017_rospla';
+label.campaigndir = '/ltedata/MASC/OAP/OAP_flight_data/20151112_WF/HVPS/19h19-19h31';
 
 % path to the directory to save processed matfiles (.mat)
-label.outputdir_mat = '/ltedata/MASC/airlab/training_set/2DS_rospla/mat';
+label.outputdir_mat = '/ltedata/MASC/OAP/OAP_flight_data/20151112_WF/HVPS/19h19-19h31_proc/';
 
 % path to the directory to save processed images (.png)
-label.outputdir_img = '/ltedata/MASC/airlab/training_set/2DS_rospla/img';
+label.outputdir_img = '/ltedata/MASC/OAP/OAP_flight_data/20151112_WF/HVPS/19h19-19h31_proc/';
 
 % imaging probe. Can be : 2DS / HVPS / CPI
-process.probe = '2DS';
+process.probe = 'HVPS';
 
 % input format : 'image' (.png) or 'matfile' (.mat) (matfile supported only for 2DS probe
 process.input_img_type = 'image';
@@ -51,7 +51,6 @@ process.min_area_for_truncated_ellipse_fit = NaN; % feature currently disabled
 process.use_icpca = true; % use ICPCA code from Lindquvist et al.
 
 % some technical parameters used to identify background threshold in CPI images
-process.rm_white_boarders = false;
 process.white_thresh = 0.95;
 % 1.3 - 0.7 - 0.5 - 0.3 intially; try all 1 
 process.graythresh_multiplier_sup = 1;
@@ -64,30 +63,45 @@ process.noise_threshold = 4.1; % 4.0-4.1 for adjusted img, 4.2 for raw img
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-if strcmp(process.probe,'2DS') || strcmp(process.probe,'HVPS')
-    process.icpca_default = true;
-    process.smoothen_perim = false;
+if strcmp(process.probe,'2DS')
+    process.icpca_default = true; % default = true
+    process.smoothen_perim = false; % default = false
     process.discard_noisy_img = false;
+    process.rm_white_boarders = false;
 
+elseif strcmp(process.probe,'HVPS')
+    process.icpca_default = false; % default = false
+    process.smoothen_perim = false; % default = false (or true?)
+    process.discard_noisy_img = false;
+    process.rm_white_boarders = false;
+    
 elseif strcmp(process.probe,'CPI')
     process.icpca_default = false; %default = false
     process.smoothen_perim = false; % default = true initially but no diff in perf and time consuming so disabled
     process.discard_noisy_img = true;
+    process.rm_white_boarders = true;
     
 end
 
 % Upload particle images present in campaigndir
 if strcmp(process.input_img_type,'image')
-    img_list = dir(fullfile(label.campaigndir,'*.png'));
+    img_list = dir(fullfile(label.campaigndir,'**','*.png'));
+    img_path = {img_list.folder};
+    img_path = img_path';
     img_list = {img_list.name};
     img_list = img_list';
-    img_list2 = dir(fullfile(label.campaigndir,'*.jpg'));
+    img_list2 = dir(fullfile(label.campaigndir,'**','*.jpg'));
+    img_path2 = {img_list2.folder};
+    img_path2 = img_path2';
+    img_path = [img_path; img_path2];
     img_list2 = {img_list2.name};
     img_list2 = img_list2';
     img_list = [img_list; img_list2];
     
 elseif strcmp(process.input_img_type,'matfile')
-    img_list = dir(fullfile(label.campaigndir,'*.mat'));
+    img_list = dir(fullfile(label.campaigndir,'**','*.mat'));
+    img_path = {img_list.folder};
+    img_path = img_path';
     img_list = {img_list.name};
     img_list = img_list';
     
@@ -97,7 +111,7 @@ n_tot = numel(img_list);
 
 if process.parallel
     % if you have less than 16 threads matlab will take as many as possible
-    n_workers = 16; 
+    n_workers = 6; 
     fprintf('The code will run on parallel on your computer, the progress bar cannot be displayed\n');
 else
     n_workers = 0;
@@ -108,7 +122,7 @@ parfor (i=1:n_tot,n_workers)
     if n_workers == 0
         fprintf('%u/%u : %s\n',i,n_tot,img_list{i});
     end
-    process_OAP_image(img_list{i},label,process);
+    process_OAP_image(img_list{i},img_path{i},label,process);
     
 end
 
