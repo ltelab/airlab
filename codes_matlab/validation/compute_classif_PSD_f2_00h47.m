@@ -186,32 +186,32 @@ for i=1:3
         
 end
 
-% renormalization
-for i=1:3
-   
-    if i==1
-       
-        PSD_matrix{i}(:,1) = PSD_matrix{i}(:,1) + 0.5 * PSD_matrix{i}(:,3);
-        PSD_matrix{i}(:,3) = 0.5 * PSD_matrix{i}(:,3);
-        
-    end
-    
-    if i==2 
-        
-        PSD_matrix{i}(:,1) = PSD_matrix{i}(:,1) + 0.5 * PSD_matrix{i}(:,4) + 0.3 * PSD_matrix{i}(:,3);
-        
-    end
-    
-    if i==3
-        
-        if merge_small_trunc
-            PSD_matrix{i}(1:3,7) = PSD_matrix{i}(1:3,7)*1;
-        else
-            PSD_matrix{i}(1:3,7:8) = PSD_matrix{i}(1:3,7:8)*1;
-        end
-    end
-    
-end
+% some small tests
+% for i=1:3
+%    
+%     if i==1
+%        
+%         PSD_matrix{i}(:,1) = PSD_matrix{i}(:,1) + 0.5 * PSD_matrix{i}(:,3);
+%         PSD_matrix{i}(:,3) = 0.5 * PSD_matrix{i}(:,3);
+%         
+%     end
+%     
+%     if i==2 
+%         
+%         PSD_matrix{i}(:,1) = PSD_matrix{i}(:,1) + 0.5 * PSD_matrix{i}(:,4) + 0.3 * PSD_matrix{i}(:,3);
+%         
+%     end
+%     
+%     if i==3
+%         
+%         if merge_small_trunc
+%             PSD_matrix{i}(1:3,7) = PSD_matrix{i}(1:3,7)*1;
+%         else
+%             PSD_matrix{i}(1:3,7:8) = PSD_matrix{i}(1:3,7:8)*1;
+%         end
+%     end
+%     
+% end
 
 
 %% illustration
